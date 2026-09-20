@@ -20,8 +20,13 @@ The thesis this tests: *eyes scale with the number of primitives, not the number
 | 8 | Retarget error is dominated by short bones (a fraction of a texel is several degrees) | 2D keypoints at 46 texels | fit against the mean of several nearby frames, or weight by bone length; not tried |
 | 9 | The skeleton's own sword arm (18-52 deg) and shield (14-21 deg) ruin up to 80% of their small features in windup, ready and strike: ragged hand, stair-stepped shield edge | found when the `rotation` gate was calibrated; visible in the contact sheet, never recorded before | rework those poses using clean angles from `rotscan.py`, or give the parts variants; then lower `damage_max` in the rig (currently 0.85, budgeted with a `_debt` note) |
 
-| 12 | `stage-3d` does not produce a real back view: the "back" is a mirrored front with the face showing | model limitation seen in one run | try a prompt hint or `stage-8view`; else draw the back or accept a flipped front only where the back is never seen |
+| 12 | `stage-3d` does not produce a real back view (a mirrored front, face showing). **Partly addressed:** `edit-krea2` gives a blank-cranium head; the torso is still a front ribcage and the shield is still front-facing | model limitation; one run each | body-level back art, or accept a flipped front where the back is not scrutinised |
 | 13 | Diffusion profiles vary in quality within one run (one clean, one muddy) | independent generations | generate several and pick, or gate on palette-purity of the corrected result |
+
+| 14 | Diffusion turnaround views come back at different pixel scales and each derives its own palette | the models do not preserve pixel size | `pixelize.py --height` and `--palette-from` (done); rare accent colours are still partly lost (boar snout stays paler than the original pink) |
+| 15 | Inputs are a mix of front-facing and already-3/4 subjects, and the pipeline assumes a front view | generated entities vary | a facing classifier (silhouette mirror symmetry) that picks the anchor view; not built |
+
+| 16 | `facing.py` (silhouette mirror symmetry) misreads a front-facing subject that carries an asymmetric item: the skeleton front scores 0.62, below the boar's 3/4 (0.73). Front and rear boar score 0.97 and 0.96, side 0.67 | the shield makes the outline lopsided | an interior signal (face features) or a symmetry score with the asymmetric parts masked out; until then treat it as a hint, not a decision, and let the agent look at the image |
 
 ## Backlog (deliberately not done, from the handoff)
 

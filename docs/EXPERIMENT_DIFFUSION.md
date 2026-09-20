@@ -82,3 +82,174 @@ is how to measure it.
 2. Feed a corrected profile in as a part **variant** and drive it from `yaw`. Requires per-part
    segmentation of the profile, which is the same problem as segmenting the front.
 3. Infer 3/4 from front + profile: not started.
+
+## Follow-up: `edit-krea2` to rotate the subject 180 degrees
+
+Run 2026-09-20. `edit-krea2` (Krea2 with an unofficial instruction-editing patch, ~34 s per run,
+`/strength` 0.01-1.0: lower follows the instruction harder, higher keeps identity). Same 10x input.
+Prompt: rotate the character 180 degrees to show the skeleton from directly behind, back of the
+skull and spine and shield strapped to the back, same pixel art style, white background.
+Strengths 0.3, 0.55 and 0.8, one run each.
+
+| strength | what it did |
+|---|---|
+| 0.3 | blank cranium; a red strap across the ribs; the shield's dark interior with a grip; noisiest pixels, a few off-palette colours before snapping |
+| 0.55 | blank cranium with a stray black band left over from the eye sockets; shield face still shown |
+| 0.8 | cleanest blank cranium and neck; shield and ribs still front-facing |
+
+**What it fixed:** the head. Every strength gives a cranium with no eye sockets, which is what
+`stage-3d`'s "back" (a mirrored front, face showing) failed to do.
+
+**What it did not do:** swap the lateral layout (the shield stays on the viewer's left where a back
+view needs it on the right; a horizontal flip fixes that deterministically), or redraw the torso
+as a spine (the ribcage stays a front ribcage). A skeleton's ribcage from behind is close to the
+front, so that matters less than it would for another subject.
+
+**How it was used:** per part. Only the head takes edit-krea2's result; every other part keeps the
+flipped front, via the `back_art` view in the yaw spike (`docs/SPIKE_YAW.md`, branch
+`spike-yaw`). One run per strength, so run-to-run variance is again unknown.
+
+## Follow-up 2: the boar, and `edit-qwen21`
+
+Run 2026-09-20. Two more findings, one about the workflow and one about the inputs.
+
+**Inputs are not always front views.** Generated entities arrive front-on (the skeleton, a crab) or
+already three-quarter (a boar). The pipeline therefore has to classify the facing first and work out
+which views of the ring it already has (the *anchor*) and which it must produce. The ring has only
+five unique views (0, 45, 90, 135, 180 degrees); the other three are mirrors. A silhouette-symmetry
+score would separate a front view (high) from a 3/4 view (low); not yet built or measured.
+
+**`edit-qwen21` rotates well; `edit-krea2` barely does.** Qwen-Image 2.1 image-to-image edit, ~65 s,
+one run per prompt, from the 3/4 boar:
+
+| prompt | result |
+|---|---|
+| rotate to face the camera | clean, symmetric front, same mane, ears, tusks, palette |
+| rotate to a perfect side profile facing left | on-model side view: tusks, striped flank, curled tail kept |
+| rotate to show it from directly behind | plausible rear: ears from behind, mane ridge, central tail, hooves |
+
+By contrast `edit-krea2` at strength 0.65, asked for a 3/4 of the skeleton, returned the front view
+with the shield enlarged and the torso narrowed, head still frontal. `stage-8view` returned no images
+at all on the skeleton (cause not investigated). One run each throughout: variance is unknown.
+
+**Making the views a ring: `pixelize.py --auto`.** The views come back at different pixel scales
+(native texel 12.6, 11.1 and 14.7 px; 45 to 62 texels tall) and each would get its own palette. New
+options, no source sprite needed:
+- `--auto N`: palette of N colours from the image itself (median cut, plus a step that adds back any
+  sizeable colour far from the palette, because median cut merges accents such as a pink snout or a
+  tusk white into their neighbours) and the pixel period from the autocorrelation of the image's
+  edges (exact on degraded synthetic data at 10, 14, 17, 20 and 23 px);
+- `--height T`: force the sprite to T texels tall, so every view shares one scale;
+- `--palette-from IMAGE`: take the palette from the anchor view, so every view shares one palette.
+
+Result on the boar (anchor = the 3/4 input, height 46): front 33x47, 3/4 58x46, side 72x48, rear
+35x48, one shared 24-colour palette. The snout is still paler than the original pink.
+
+**Not yet done:** the 135-degree rear three-quarter (one more edit), the asymmetry patch for mirrored
+views (matters for the skeleton's shield and weapon hand, likely little for the boar), a facing
+classifier, and driving any of this from `yaw`.
+
+## Follow-up 3: the boar's five unique views
+
+Run 2026-09-21. The 135-degree rear three-quarter, two independent generations (`edit-qwen21`,
+seeds 4101 and 7202, same prompt, from the 3/4 boar), pixelized with `--auto 20 --height 46
+--palette-from <3/4 anchor>`.
+
+| view | size (texels) | source |
+|---|---|---|
+| front | 33x47 | edit-qwen21 |
+| 3/4 | 58x46 | the input, pixelized |
+| side | 72x48 | edit-qwen21 |
+| rear 3/4 (a) | 48x48 | edit-qwen21, seed 4101 |
+| rear 3/4 (b) | 50x48 | edit-qwen21, seed 7202 |
+| rear | 35x48 | edit-qwen21 |
+
+Both rear-three-quarters read as the same boar seen mostly from behind: head turned away with the
+tusk at far left, rump and curled tail nearest the camera, striped back. They differ in leg
+positions and stripe detail, so two samples agree on the view and differ in detail. That is the
+first (small) evidence on run-to-run variance for this subject. All six share a scale and a
+24-colour palette. With the mirror images this is a complete eight-view ring for the boar, which is
+close to symmetric so the mirrors need little patching.
+
+Mistake on the way: the first two attempts submitted an invalid seed (a number with a letter
+appended), so nothing was generated and the folders were empty; the second attempt broke on a shell
+syntax error of mine. Both cost time, neither cost quota.
+
+**Facing classifier (`pixelanim/facing.py`).** Silhouette mirror symmetry: boar front 0.97, rear
+0.96, 3/4 0.73, side 0.67, and the skeleton front only 0.62, because its shield makes the outline
+lopsided. It separates a symmetric subject from an asymmetric one but misreads a front-facing subject
+carrying an asymmetric item. Treat it as a hint (open defect 16).
+
+## Follow-up 4: the correction was too harsh; what fixed it
+
+Feedback on the first boar turntable: missing outlines, the front view's eye glints gone, and the pink
+snout chopped off. Diagnosis and fixes, in the order they were found:
+
+1. **Plain majority vote per cell** loses whatever is thin or small: a 1-texel outline is often under
+   half its cell, a glint is outvoted by the pupil, a rare colour by its neighbour. Fix: rarity-weighted
+   voting (`--preserve`, weight = share^-gamma, darkest colour boosted again), default 0.5 here.
+2. **The palette never contained the colours.** Reweighting cannot restore a colour that is not in the
+   palette. Median cut averaged the salmon snout (240,128,120) with dark nostril and outline pixels and
+   returned a dusty blend (193,132,130) that is in no pixel; the 3/4 anchor also barely showed the snout.
+   Fix: palette from the most common *exact* colours (histogram modes, then refined to the mean of the
+   pixels within a small radius), and from the union of all views (`--palette-also`).
+3. **Near-duplicate palette entries** (three near-blacks) split the outline between them. Merge palette
+   colours that are practically the same colour (distance 13; 26 was too aggressive and collapsed 24
+   colours to 12, flattening the shading).
+4. **A measure that would have caught all of it:** per palette colour, its share of the figure in the
+   corrected sprite over its share in the raw image (`representation`). At plain majority it flags the
+   specular white and the outline near-blacks at 0-54%. `--sweep` lists the cells where a rare colour
+   covered a fair fraction of the raw cell but the sprite shows something else, which is the comparison
+   sweep an agent reviews. `--restore FRAC --restore-colours ...` restores chosen accents; `--patch` applies
+   hand touch-ups from a JSON list.
+5. **Two regressions I introduced on the way, both caught by looking at the frames, not by the measure:**
+   pale specks along the silhouette (the anti-aliased fringe snapped to the now-correct white and, with
+   rare colours boosted, won edge cells; fixed by treating near-white pixels touching the background as
+   background, which is only safe while texels are much wider than the 3 px band), and an edge guard on
+   the restore step that turned out not to be the cause.
+
+**Where it stands:** pink snouts in every view, purple ears, unbroken outlines, white tusks, clean
+silhouettes. Still short: the eye glints are present but smaller than the original (a 2x2-pixel raw glint
+straddles four cells at 30-40% each), and the outline colour keeps about 41% of its raw share, which is
+the unavoidable cost of drawing a 1-pixel line on a coarser grid. Palette 28 colours; sprites 46-48
+texels tall.
+
+## Follow-up 5: the skeleton ring, and the mirror problem
+
+Run 2026-09-21. `edit-qwen21` from the skeleton front (10x input), one run per view, seeds 1101-1104
+and 6404, corrected with `pixelize.py` against the skeleton's real 14-colour palette at the known
+scale (`--preserve 0.4`).
+
+| view | what came back |
+|---|---|
+| 3/4 | skull turned with a dark socket and cheek; shield left, glove right |
+| side | a real profile: jaw, thin ribs, shield narrowed; shield left, glove right |
+| rear 3/4 | skull turned away; **shield still on the left**, ragged legs |
+| rear | a true back: blank cranium, spine, ribs, pelvis, both legs; **shield on the viewer's right showing its plain back, glove on the left** |
+
+Two failures worth knowing: the first rear generation returned nothing (no render hash, cause unknown; a
+fresh seed worked, and the queue had a stalled job in it), and the direct rear is the *only* view where
+the model moved the shield across the body, which is physically right and inconsistent with its own rear
+3/4.
+
+**The mirror problem, and the patch.** A plain mirror of any view moves the shield to the wrong side.
+`pixelanim/mirrorpatch.py`:
+- `mirror_patched`: lift the handed items off (pixels in the shield's colour family plus a 1-texel ring),
+  mirror everything else about the body axis (found by symmetry with the handed items excluded, so the
+  shield cannot pull the axis off the body), put the items back unmirrored;
+- `flip_handed`: the inverse, for a view that has the right body and the wrong side for the shield
+  (the rear 3/4): body untouched, handed items moved across the axis.
+
+Two bugs on the way, both visible only by looking: parts hidden behind the shield in the original
+(the far leg) do not exist to be mirrored, leaving disconnected fragments; filling every empty
+position fixed that and produced a two-faced skull (the unmirrored skull drawn over the mirrored one),
+so the fill is limited to the mirrored shadow of the handed items.
+
+**The ring.** Physically the shield should travel left, centre (90), right (135-225), centre (270), left:
+`skel_turn_physical.gif`. `skel_turn_allleft.gif` keeps it on the left in every frame, for identity
+consistency at the cost of physics. Frames are aligned on the body axis, not the bounding box.
+
+**Limits:** colour-family detection of handed items works because only the shield and glove use the red
+family on this skeleton; a subject whose handed item shares colours with its body needs a mask. The rear
+3/4 and its mirrors have ragged legs that come from the generation. One run per view, so variance is
+unknown. The mirrored half is a reconstruction, not something the model drew.
