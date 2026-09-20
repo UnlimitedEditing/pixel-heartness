@@ -14,7 +14,6 @@ The thesis this tests: *eyes scale with the number of primitives, not the number
 | 4 | Squash is not seen when segmentation sizes underlap | squash is a global matrix applied after the rig's pose list is read | include the squash matrix in `required_underlap`; low priority, drift is small |
 | 5 | `agree` can only run where Aseprite is installed; otherwise it reports SKIPPED and everything is green | the second implementation lives in Aseprite Lua | a Python-only second renderer, or CI on a machine with Aseprite |
 | 6 | Lag: looping settles over 3 passes, non-looping starts unlagged; a state entered mid-motion is not modelled | no notion of the previous state | carry lag state across state transitions once the engine side can switch states |
-
 | 7 | A retargeted state can contain invented small motions and still tear a hole | tracker jitter on short bones becomes rotation | `holes` catches it after the fact; the deadband and `--smooth` reduce it. A retarget-time check that renders the candidate and refuses on any gate failure would close it |
 | 8 | Retarget error is dominated by short bones (a fraction of a texel is several degrees) | 2D keypoints at 46 texels | fit against the mean of several nearby frames, or weight by bone length; not tried |
 
