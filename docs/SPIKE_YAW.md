@@ -41,3 +41,35 @@ bounded amount; the Lua mirror.
 
 Not done, and needed first: authored side and back art. That is the real cost, and it is the one
 place generation might earn its keep.
+
+## Update: per-part views from a diffusion profile
+
+Second spike, same branch. `stage-3d` supplied a profile (`docs/EXPERIMENT_DIFFUSION.md`);
+`pixelize.py` put it on the sprite's grid and palette; `examples/skeleton_warrior/make_views.py`
+cut it into per-part variant art by boxes read off the printed map (crude on purpose: one visible
+leg, an edge-on shield and a glove overlapping the hip defeat seed-based flood). `riglib.yaw_plan`
+picks, per part, the nearest available view (front 0, side 90, back 180 via the flipped front,
+side_l 270 via the mirrored profile) and scales the card by cos of the leftover angle, so no card is
+squashed below ~0.7. `make_turn_rig.py` builds `rig_turn.json`: 24 frames, every 15 degrees.
+
+**Reads well:** 0-45 (narrowing front), 60-135 (a real profile: skull, ribs, glove, edge-on shield),
+240-300 (the mirrored profile), 315-345 (front again).
+
+**Reads badly:** 150-225, the back. It is the flipped front with the face still showing, the chest
+becomes a black mass, and up to 200 texels per frame are invented (frame 10: 164 of 573). No real
+back exists; a diffusion "back" was a mirrored front. Also a visible pop at 45-60 degrees, where
+the front card (~0.7 wide) hands over to the profile (~0.87): there is no 3/4 view.
+
+**Gates on it:** rest, palette, floaters, border, ground, synth (reported), rotation pass. `holes`
+tears one texel at the foot in frames 4-8. `distinct` fails between consecutive frames that pick the
+same profile (yaw 75, 90, 105 render identically, which is correct). `variant` fails for a
+reason that is a gate bug, not an art bug: it assumes a variant overlaps the silhouette of the
+part it replaces and is used by a pose, and a *view* variant does neither. Merging needs the gate
+taught the difference, the Lua mirror for `agree`, and a `yaw` state that doesn't rely on `distinct`.
+
+**Measured input:** profile 11 texels wide against 31 for the front (0.35), used as `yaw_thickness`.
+
+**Open before it can merge:** a real back (or an honest decision to only ever show the flipped front
+where the back is not seen); a 3/4 view (infer from front + profile, or accept the pop); the second
+leg (the profile shows one, so `leg_l` has no art at 90 degrees); rotation of profile parts under
+animation has not been tried; run-to-run variance of the diffusion profile is unknown.

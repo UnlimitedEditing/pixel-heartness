@@ -1,0 +1,341 @@
+{
+  "name": "skeleton_turn",
+  "source": "skeleton_warrior.png",
+  "parts_file": "out/turn_parts.aseprite",
+  "anim_file": "out/turn_anim.aseprite",
+  "strip_file": "out/turn_strip.png",
+  "cell": [
+    48,
+    48
+  ],
+  "_note": "parts are listed backmost first; that order is the z order. `seeds` are the authoritative cut hints (cell coords, y down, read off Tools/anim/sheet.py grid); `rect` is only a fallback when seeds are absent. `mirror_of` rebuilds a part its occluder hid, from its bilateral twin.",
+  "parts": [
+    {
+      "name": "leg_r",
+      "rect": [
+        27,
+        30,
+        10,
+        18
+      ],
+      "pivot": [
+        31,
+        31
+      ],
+      "parent": "pelvis",
+      "seeds": [
+        [
+          30,
+          35
+        ],
+        [
+          29,
+          42
+        ],
+        [
+          31,
+          45
+        ],
+        [
+          29,
+          33
+        ]
+      ],
+      "variants": {
+        "side": "views/side_leg_r.png"
+      }
+    },
+    {
+      "name": "leg_l",
+      "rect": [
+        17,
+        30,
+        9,
+        18
+      ],
+      "pivot": [
+        23,
+        31
+      ],
+      "parent": "pelvis",
+      "seeds": [
+        [
+          19,
+          40
+        ],
+        [
+          18,
+          42
+        ],
+        [
+          17,
+          45
+        ]
+      ],
+      "mirror_of": "leg_r",
+      "variants": {
+        "side": "views/side_leg_l.png"
+      }
+    },
+    {
+      "name": "pelvis",
+      "rect": [
+        22,
+        24,
+        11,
+        8
+      ],
+      "pivot": [
+        27,
+        28
+      ],
+      "parent": null,
+      "seeds": [
+        [
+          24,
+          22
+        ],
+        [
+          27,
+          26
+        ]
+      ],
+      "mirror_of": "pelvis",
+      "variants": {
+        "side": "views/side_pelvis.png"
+      }
+    },
+    {
+      "name": "torso",
+      "rect": [
+        20,
+        13,
+        13,
+        12
+      ],
+      "pivot": [
+        27,
+        26
+      ],
+      "parent": "pelvis",
+      "seeds": [
+        [
+          24,
+          16
+        ],
+        [
+          26,
+          18
+        ]
+      ],
+      "mirror_of": "torso",
+      "variants": {
+        "side": "views/side_torso.png"
+      }
+    },
+    {
+      "name": "head",
+      "rect": [
+        18,
+        1,
+        15,
+        14
+      ],
+      "pivot": [
+        25,
+        15
+      ],
+      "parent": "torso",
+      "seeds": [
+        [
+          25,
+          7
+        ]
+      ],
+      "variants": {
+        "side": "views/side_head.png"
+      }
+    },
+    {
+      "name": "arm_weapon",
+      "rect": [
+        29,
+        21,
+        11,
+        13
+      ],
+      "pivot": [
+        32,
+        23
+      ],
+      "parent": "torso",
+      "seeds": [
+        [
+          33,
+          22
+        ],
+        [
+          34,
+          26
+        ],
+        [
+          36,
+          30
+        ]
+      ],
+      "variants": {
+        "side": "views/side_arm_weapon.png"
+      }
+    },
+    {
+      "name": "arm_shield",
+      "rect": [
+        17,
+        16,
+        8,
+        8
+      ],
+      "pivot": [
+        22,
+        20
+      ],
+      "parent": "torso",
+      "seeds": [
+        [
+          18,
+          17
+        ],
+        [
+          19,
+          18
+        ]
+      ],
+      "mirror_of": "arm_weapon",
+      "variants": {
+        "side": "views/side_arm_shield.png"
+      }
+    },
+    {
+      "name": "shield",
+      "rect": [
+        9,
+        19,
+        20,
+        22
+      ],
+      "pivot": [
+        20,
+        24
+      ],
+      "parent": "arm_shield",
+      "seeds": [
+        [
+          20,
+          21
+        ],
+        [
+          20,
+          24
+        ],
+        [
+          13,
+          30
+        ],
+        [
+          16,
+          36
+        ]
+      ],
+      "variants": {
+        "side": "views/side_shield.png"
+      }
+    }
+  ],
+  "states": [
+    {
+      "name": "turn",
+      "fps": 8,
+      "loop": true,
+      "min_distinct": 0.3,
+      "frames": [
+        {
+          "yaw": 0
+        },
+        {
+          "yaw": 15
+        },
+        {
+          "yaw": 30
+        },
+        {
+          "yaw": 45
+        },
+        {
+          "yaw": 60
+        },
+        {
+          "yaw": 75
+        },
+        {
+          "yaw": 90
+        },
+        {
+          "yaw": 105
+        },
+        {
+          "yaw": 120
+        },
+        {
+          "yaw": 135
+        },
+        {
+          "yaw": 150
+        },
+        {
+          "yaw": 165
+        },
+        {
+          "yaw": 180
+        },
+        {
+          "yaw": 195
+        },
+        {
+          "yaw": 210
+        },
+        {
+          "yaw": 225
+        },
+        {
+          "yaw": 240
+        },
+        {
+          "yaw": 255
+        },
+        {
+          "yaw": 270
+        },
+        {
+          "yaw": 285
+        },
+        {
+          "yaw": 300
+        },
+        {
+          "yaw": 315
+        },
+        {
+          "yaw": 330
+        },
+        {
+          "yaw": 345
+        }
+      ]
+    }
+  ],
+  "symmetry_x": 25,
+  "underlap": 6,
+  "damage_max": 1.0,
+  "_debt": "damage_max is raised from the default 0.5 to admit known debt: the sword arm (18-52 deg) and shield (14-21 deg) ruin up to 80% of their small features in windup/ready/strike, visible as a ragged hand and a stair-stepped shield edge. See DEFECTS.md OPEN #9. Lower this as the poses are reworked; do not raise it.",
+  "yaw_thickness": 0.35
+}

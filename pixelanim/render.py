@@ -79,15 +79,18 @@ def compose(rig: riglib.Rig, parts: Parts, pose: dict, offset=(0, 0), cull=True,
     if squash:
         shift = shift @ riglib.squash_matrix(squash, rig.squash_base())
     order = list(range(len(rig.parts)))
+    plan = None
     if yaw:
-        ym, order = riglib.yaw_matrix(rig, parts, yaw)
-        shift = shift @ ym
+        plan, order = riglib.yaw_plan(rig, parts, yaw)
     cache = {}
     layers = []
     for p in rig.parts:                      # layers stay in rig order; `order` sorts them below
         n = p["name"]
         m = shift @ riglib.world_matrix(rig, n, pose, cache)
         v = pose.get(n, {}).get("variant")
+        if plan:
+            m = shift @ plan[n]["matrix"] @ riglib.world_matrix(rig, n, pose, cache)
+            v = v or plan[n]["variant"]
         if v:
             if (n, v) not in parts.variant_layer:
                 raise SystemExit("render: part %s has no variant '%s'" % (n, v))

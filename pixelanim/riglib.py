@@ -181,41 +181,61 @@ def squash_matrix(amount: float, base) -> np.ndarray:
                      [0.0, 0.0, 1.0]])
 
 
-def yaw_matrix(rig: Rig, parts, yaw_deg: float):
-    """SPIKE. Turn the whole figure about its vertical axis as a stack of flat
-    cards, and return (matrix, draw_order).
+DEFAULT_VIEWS = [
+    {"name": "front", "angle": 0, "variant": None, "mirror": False},
+    {"name": "side", "angle": 90, "variant": "side", "mirror": False},
+    {"name": "back", "angle": 180, "variant": None, "mirror": True},
+    {"name": "side_l", "angle": 270, "variant": "side", "mirror": True},
+]
 
-    Every card sits at some lateral offset from the body axis and some depth.
-    Rotating by `t` about the axis maps the lateral offset by cos(t) -- for a
-    card that is an x-scale about the axis, position and width together -- and
-    moves it in depth by (offset * sin t). So the matrix is one horizontal scale,
-    and the only per-part effect is the draw order: sort by depth.
 
-    A card seen edge-on has no width, but a body does, so |cos t| is clamped at
-    `yaw_thickness` (default 0.4). Past 90 degrees the scale goes negative: the
-    card is mirrored, so "back" is the front flipped. That is a stand-in, not a
-    back view; real back art needs part variants.
+def _wrap(d):
+    return (d + 180.0) % 360.0 - 180.0
 
-    Depth of a part at yaw 0 comes from its draw order (`depth_step` texels per
-    rank, default 2), so a shield drawn in front of a torso starts in front.
+
+def yaw_plan(rig: Rig, parts, yaw_deg: float):
+    """SPIKE. Per-part view selection for a turn about the vertical axis.
+
+    The rig lists views (`views`, default front 0 / side 90 / back 180 / side_l 270);
+    a view either reuses the part's front art or names a variant (`side`), and may
+    mirror it. For each part the nearest *available* view wins, and the card is
+    scaled horizontally by cos(residual angle) about the body axis, negated for a
+    mirrored view. With views every 90 degrees the residual is at most 45, so a card
+    is never squashed below ~0.7. A part with no art for any near view falls back to
+    the flipped front, clamped at `yaw_thickness` so it never vanishes.
+
+    Returns (plan, order): plan[name] = dict(variant, matrix), and the draw order,
+    backmost first. Front and back cards sort by depth (`base * cos + offset * sin`);
+    profile art sorts by the rig's own z order, because its horizontal axis is the
+    body's depth axis and a lateral offset means something else there.
     """
-    t = math.radians(yaw_deg)
-    ax = float(rig.data.get("symmetry_x", 0.0)) if "symmetry_x" in rig.data else         float(next(p for p in rig.parts if not p.get("parent"))["pivot"][0])
+    views = rig.data.get("views") or DEFAULT_VIEWS
+    ax = float(rig.data["symmetry_x"]) if "symmetry_x" in rig.data else         float(next(p for p in rig.parts if not p.get("parent"))["pivot"][0])
     thick = float(rig.data.get("yaw_thickness", 0.4))
     step = float(rig.data.get("depth_step", 2.0))
-    c, s = math.cos(t), math.sin(t)
-    scale = math.copysign(max(abs(c), thick), c if c else 1.0)
-    depths = []
+    t = math.radians(yaw_deg)
+    c, sn = math.cos(t), math.sin(t)
     n = len(rig.parts)
+    plan, depth = {}, []
     for i, p in enumerate(rig.parts):
-        a = parts.layer[p["name"]][:, :, 3] > ALPHA_CUT
-        xs = np.where(a.any(axis=0))[0]
-        xc = float(xs.mean()) + 0.5 if len(xs) else ax
+        name = p["name"]
+        avail = [v for v in views if v.get("variant") is None or (name, v["variant"]) in parts.variant_layer]
+        v = min(avail, key=lambda v: abs(_wrap(yaw_deg - v["angle"])))
+        r = math.radians(_wrap(yaw_deg - v["angle"]))
+        scale = max(math.cos(r), thick)
+        sgn = -1.0 if v.get("mirror") else 1.0
+        m = np.array([[sgn * scale, 0.0, ax - sgn * scale * ax], [0.0, 1.0, 0.0], [0.0, 0.0, 1.0]])
+        plan[name] = dict(variant=v.get("variant"), matrix=m, view=v["name"])
         base = (i - (n - 1) / 2.0) * step
-        depths.append(base * c + (xc - ax) * s)
-    order = sorted(range(n), key=lambda i: (depths[i], i))
-    m = np.array([[scale, 0.0, ax - scale * ax], [0.0, 1.0, 0.0], [0.0, 0.0, 1.0]])
-    return m, order
+        if v.get("variant"):
+            depth.append(i * 1e-3)                  # profile art: rig z order
+        else:
+            a = parts.layer[name][:, :, 3] > ALPHA_CUT
+            xs = np.where(a.any(axis=0))[0]
+            xc = float(xs.mean()) + 0.5 if len(xs) else ax
+            depth.append(base * c + (xc - ax) * sn)
+    order = sorted(range(n), key=lambda i: (depth[i], i))
+    return plan, order
 
 
 def load_rig(path) -> Rig:
