@@ -153,7 +153,7 @@ once the artefact had a name.
    segmentation work.
 3. **DONE 2026-09-20 (third session), see REFERENCE.md "Part variants":** **Part variants** (§2's first deliverable) — cheaper now, because `segment.py` already
    emits one file per part and the manifest can carry alternates.
-4. Only then the motion-reference work in §9.
+4. **MACHINERY DONE 2026-09-20 (third session), real-clip experiment still open; see REFERENCE.md "Retargeting":** Only then the motion-reference work in §9.
 
 ---
 

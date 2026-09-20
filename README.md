@@ -53,7 +53,7 @@ JSON; relative paths (`source`, `parts_file`, `anim_file`, `strip_file`) resolve
 
 | path | what |
 |---|---|
-| `pixelanim/` | segment, render, checks, sheet, riglib, rig.lua |
+| `pixelanim/` | segment, render, checks, sheet, riglib, rig.lua, retarget |
 | `examples/skeleton_warrior/` | rig + source sprite: biped FK |
 | `examples/slime/`, `examples/wisp/` | squash/stretch and chain-lag subjects; `python examples/make_examples.py` regenerates them |
 | `docs/REFERENCE.md` | how the cut, gates, ground lock work |

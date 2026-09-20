@@ -15,6 +15,9 @@ The thesis this tests: *eyes scale with the number of primitives, not the number
 | 5 | `agree` can only run where Aseprite is installed; otherwise it reports SKIPPED and everything is green | the second implementation lives in Aseprite Lua | a Python-only second renderer, or CI on a machine with Aseprite |
 | 6 | Lag: looping settles over 3 passes, non-looping starts unlagged; a state entered mid-motion is not modelled | no notion of the previous state | carry lag state across state transitions once the engine side can switch states |
 
+| 7 | A retargeted state can contain invented small motions and still tear a hole | tracker jitter on short bones becomes rotation | `holes` catches it after the fact; the deadband and `--smooth` reduce it. A retarget-time check that renders the candidate and refuses on any gate failure would close it |
+| 8 | Retarget error is dominated by short bones (a fraction of a texel is several degrees) | 2D keypoints at 46 texels | fit against the mean of several nearby frames, or weight by bone length; not tried |
+
 ## Backlog (deliberately not done, from the handoff)
 
 Ordered as the handoff ordered them; item numbers are its section numbers.
@@ -22,7 +25,7 @@ Ordered as the handoff ordered them; item numbers are its section numbers.
 1. **Method files** (section 5, layer 3): per-archetype, per-motion recipes as executable markdown with worked numbers. `pixelanim/methods/` does not exist yet.
 2. **The agent loop** (section 5, layer 4). Build only after the gates, which is where things stand now.
 3. **First falsifiable experiment** (section 6): an agent re-authors `skeleton_warrior`'s `strike` from the rig schema and a method file; compare with the hand-written one in git.
-4. **Motion reference** (section 9): retarget clean 2D keypoints (a stock clip or BVH) onto the rig and compare against the hand-written `strike`. Diffusion is for the *curve* only, never for texels. The fit residual doubles as the deformable / needs-new-information classifier from section 2.
+4. **Motion reference, real-clip half** (section 9). The fitter, key reduction and foreshortening classifier are built and validated against synthetic ground truth (`pixelanim/retarget.py`). Still to do: obtain a real clip (a stock BVH or estimated keypoints; downloading needs the user's go-ahead), write the thin BVH-to-part-names mapping, retarget onto `skeleton_warrior`, and compare against the hand-written `strike`. That comparison is the falsifiable experiment; nothing so far speaks to it. Diffusion is for the *curve* only, never for texels.
 5. **SAM falsification** (section 10): score SAM masks on the upscaled `skeleton_warrior` against the current label map before any ComfyUI work.
 6. **Prior-art search** (sections 0 and 7): Spine, DragonBones, the Aseprite scripting community, the pixel-art tutorial corpus. Not searched.
 7. **Per-archetype defaults file** a rig inherits from (section 7).
@@ -49,4 +52,6 @@ Ordered as the handoff ordered them; item numbers are its section numbers.
 | Lag configured but tip barely moves; and first version of the gate measured local rotation, which shrinks down a cascade | lag primitive | gate, then reasoning about the cascade | `lag` gate, measured at the tip |
 | Squash drops or duplicates rows under nearest-neighbour | squash primitive | anticipated | `volume` |
 | Single synthetic texel beside head in frames 2 and 7 of the wisp | rotation reveals an underlap texel attached at one corner | eye | **OPEN #2** -- passes `floaters` (attached); a `synth` texel-count bar per frame would flag it |
+| Key reduction by extrema missed a slope corner (strike middle key), 1/3 recovered | keys are corners as well as extrema | round-trip selftest | greedy piecewise-linear simplification in `retarget.py` |
+| Fit invented small rotations on parts the animator held still, and one tore a hole | tracker jitter on short bones | gate (`holes`), then eye on the fitted numbers | deadband scaled by bone length; still **OPEN #7** |
 | Variant swap exposed body texels the `eyes` part had grabbed during segmentation (synth 0% -> 4%) | a part's flood claimed texels its variant does not redraw | `synth` gate delta, then eye | fixed in the example by seeding the body there; **OPEN #3** for the general case |

@@ -183,6 +183,45 @@ uses. Variants get no underlap, so a variant much smaller than the part exposes 
 it (defect #3 in DEFECTS.md); a variant that is a different silhouette needs the neighbours to
 cover the seam. `examples/slime` blinks this way.
 
+## Retargeting a motion curve - `retarget.py`
+
+Takes a 2D keypoint clip (per part: `pivot` and `tip`, cell space, frame 0 = rest) and produces
+an ordinary rig state. Mocap or a video model may supply the *curve*; no texel ever comes from
+it. Mapping a BVH or pose-estimator skeleton onto part names is a separate thin step, not built.
+
+```bash
+python pixelanim/retarget.py fit <rig> clip.json --max-keys 4 --tolerance 2 --out state.json
+python pixelanim/retarget.py selftest <rig> --state strike --noise 0.2 --densify 6
+python pixelanim/retarget.py selftest <rig> --state strike --densify 6 --foreshorten head
+```
+
+- **Fit**: per frame in FK order, `rot` is the bone's world angle change minus what the parent
+  chain already contributes; `dx,dy` is the pivot's offset from where the parent puts it, in the
+  parent's frame, rounded to whole texels. Rotations under `--deadband` degrees (or half a texel
+  of tip travel on a short bone, if larger) are dropped as jitter.
+- **Keys**: greedy piecewise-linear simplification of the whole pose curve, stopped by
+  `--tolerance` degrees or `--max-keys`. It finds extrema *and* slope corners. My first version
+  scored extrema only and missed the strike's middle key, because a monotone ramp that changes
+  speed has a corner and no extremum.
+- **Classifier**: a bone whose length changes by more than 15% between frames cannot be an
+  in-plane rotation - that is the "needs new information" column of the handoff's section 2, and
+  the frame report names the part. A pivot the rig cannot reach with rotation and whole-texel
+  translation is reported separately.
+
+**Measured** (round trip on `skeleton_warrior`: rig -> ground-truth keypoints -> fit):
+exact at zero noise; authored keys recovered strike 3/3, windup 2/2, walk 4/4 (3/4 at 0.2 texel
+noise); clean clips flag 0 frames, a bone shortened 45% flags exactly that part. At 0.2 texel
+noise the mean rotation error is 1.9 degrees, and short bones are the weak point - a fraction
+of a texel on a 4-texel bone is several degrees. A fit from a noisy clip once tore a hole in a
+frame (the `holes` gate caught it), so **always run the gates on a retargeted state**.
+`--smooth 3` cuts invented motion (0.85 -> 0.53 moved parts per key) but costs rotation error
+(1.9 -> 2.1 degrees) by blunting peaks; it is off by default.
+
+**Not yet done**: the real experiment - a genuine clip (BVH or estimated keypoints) retargeted
+onto `skeleton_warrior` and compared against the hand-written strike. Everything above validates
+the machinery against ground truth it generated itself, which proves the fit is correct and says
+nothing about whether real motion beats a hand-written three-key strike.
+
 ## Ground lock
 
 Rotating a limb about a joint above it moves its far end vertically by
