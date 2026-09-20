@@ -20,6 +20,9 @@ The thesis this tests: *eyes scale with the number of primitives, not the number
 | 8 | Retarget error is dominated by short bones (a fraction of a texel is several degrees) | 2D keypoints at 46 texels | fit against the mean of several nearby frames, or weight by bone length; not tried |
 | 9 | The skeleton's own sword arm (18-52 deg) and shield (14-21 deg) ruin up to 80% of their small features in windup, ready and strike: ragged hand, stair-stepped shield edge | found when the `rotation` gate was calibrated; visible in the contact sheet, never recorded before | rework those poses using clean angles from `rotscan.py`, or give the parts variants; then lower `damage_max` in the rig (currently 0.85, budgeted with a `_debt` note) |
 
+| 12 | `stage-3d` does not produce a real back view: the "back" is a mirrored front with the face showing | model limitation seen in one run | try a prompt hint or `stage-8view`; else draw the back or accept a flipped front only where the back is never seen |
+| 13 | Diffusion profiles vary in quality within one run (one clean, one muddy) | independent generations | generate several and pick, or gate on palette-purity of the corrected result |
+
 ## Backlog (deliberately not done, from the handoff)
 
 Ordered as the handoff ordered them; item numbers are its section numbers.
