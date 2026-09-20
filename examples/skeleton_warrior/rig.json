@@ -1,0 +1,480 @@
+{
+  "name": "skeleton_warrior",
+  "source": "skeleton_warrior.png",
+  "parts_file": "out/skeleton_warrior_parts.aseprite",
+  "anim_file": "out/skeleton_warrior_anim.aseprite",
+  "strip_file": "out/skeleton_warrior_strip.png",
+  "cell": [
+    48,
+    48
+  ],
+  "_note": "parts are listed backmost first; that order is the z order. `seeds` are the authoritative cut hints (cell coords, y down, read off Tools/anim/sheet.py grid); `rect` is only a fallback when seeds are absent. `mirror_of` rebuilds a part its occluder hid, from its bilateral twin.",
+  "parts": [
+    {
+      "name": "leg_r",
+      "rect": [
+        27,
+        30,
+        10,
+        18
+      ],
+      "pivot": [
+        31,
+        31
+      ],
+      "parent": "pelvis",
+      "seeds": [
+        [
+          30,
+          35
+        ],
+        [
+          29,
+          42
+        ],
+        [
+          31,
+          45
+        ],
+        [
+          29,
+          33
+        ]
+      ]
+    },
+    {
+      "name": "leg_l",
+      "rect": [
+        17,
+        30,
+        9,
+        18
+      ],
+      "pivot": [
+        23,
+        31
+      ],
+      "parent": "pelvis",
+      "seeds": [
+        [
+          19,
+          40
+        ],
+        [
+          18,
+          42
+        ],
+        [
+          17,
+          45
+        ]
+      ],
+      "mirror_of": "leg_r"
+    },
+    {
+      "name": "pelvis",
+      "rect": [
+        22,
+        24,
+        11,
+        8
+      ],
+      "pivot": [
+        27,
+        28
+      ],
+      "parent": null,
+      "seeds": [
+        [
+          24,
+          22
+        ],
+        [
+          27,
+          26
+        ]
+      ],
+      "mirror_of": "pelvis"
+    },
+    {
+      "name": "torso",
+      "rect": [
+        20,
+        13,
+        13,
+        12
+      ],
+      "pivot": [
+        27,
+        26
+      ],
+      "parent": "pelvis",
+      "seeds": [
+        [
+          24,
+          16
+        ],
+        [
+          26,
+          18
+        ]
+      ],
+      "mirror_of": "torso"
+    },
+    {
+      "name": "head",
+      "rect": [
+        18,
+        1,
+        15,
+        14
+      ],
+      "pivot": [
+        25,
+        15
+      ],
+      "parent": "torso",
+      "seeds": [
+        [
+          25,
+          7
+        ]
+      ]
+    },
+    {
+      "name": "arm_weapon",
+      "rect": [
+        29,
+        21,
+        11,
+        13
+      ],
+      "pivot": [
+        32,
+        23
+      ],
+      "parent": "torso",
+      "seeds": [
+        [
+          33,
+          22
+        ],
+        [
+          34,
+          26
+        ],
+        [
+          36,
+          30
+        ]
+      ]
+    },
+    {
+      "name": "arm_shield",
+      "rect": [
+        17,
+        16,
+        8,
+        8
+      ],
+      "pivot": [
+        22,
+        20
+      ],
+      "parent": "torso",
+      "seeds": [
+        [
+          18,
+          17
+        ],
+        [
+          19,
+          18
+        ]
+      ],
+      "mirror_of": "arm_weapon"
+    },
+    {
+      "name": "shield",
+      "rect": [
+        9,
+        19,
+        20,
+        22
+      ],
+      "pivot": [
+        20,
+        24
+      ],
+      "parent": "arm_shield",
+      "seeds": [
+        [
+          20,
+          21
+        ],
+        [
+          20,
+          24
+        ],
+        [
+          13,
+          30
+        ],
+        [
+          16,
+          36
+        ]
+      ]
+    }
+  ],
+  "states": [
+    {
+      "name": "idle",
+      "fps": 6,
+      "loop": true,
+      "frames": [
+        {
+          "pose": {}
+        },
+        {
+          "pose": {
+            "torso": {
+              "dy": -1
+            },
+            "arm_shield": {
+              "rot": 3
+            },
+            "arm_weapon": {
+              "rot": 3
+            }
+          }
+        },
+        {
+          "pose": {
+            "torso": {
+              "dy": -1
+            },
+            "head": {
+              "dy": -1
+            },
+            "arm_shield": {
+              "rot": 6
+            },
+            "arm_weapon": {
+              "rot": 6
+            }
+          }
+        },
+        {
+          "pose": {
+            "arm_shield": {
+              "rot": 3
+            },
+            "arm_weapon": {
+              "rot": 3
+            }
+          }
+        }
+      ],
+      "min_distinct": 1.5
+    },
+    {
+      "name": "walk",
+      "fps": 8,
+      "loop": true,
+      "frames": [
+        {
+          "pose": {
+            "leg_l": {
+              "rot": -10
+            },
+            "leg_r": {
+              "rot": 10
+            }
+          }
+        },
+        {
+          "pose": {
+            "torso": {
+              "dy": -1
+            },
+            "leg_l": {
+              "rot": 0
+            },
+            "leg_r": {
+              "rot": 0
+            }
+          }
+        },
+        {
+          "pose": {
+            "leg_l": {
+              "rot": 10
+            },
+            "leg_r": {
+              "rot": -10
+            }
+          }
+        },
+        {
+          "pose": {
+            "torso": {
+              "dy": -1
+            },
+            "leg_l": {
+              "rot": 0
+            },
+            "leg_r": {
+              "rot": 0
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "ready",
+      "fps": 10,
+      "loop": false,
+      "frames": [
+        {
+          "pose": {
+            "arm_weapon": {
+              "rot": -16
+            }
+          }
+        },
+        {
+          "pose": {
+            "arm_weapon": {
+              "rot": -30
+            },
+            "torso": {
+              "rot": -3
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "windup",
+      "fps": 10,
+      "loop": false,
+      "frames": [
+        {
+          "pose": {
+            "arm_weapon": {
+              "rot": -46
+            },
+            "torso": {
+              "rot": -6
+            },
+            "arm_shield": {
+              "rot": -8
+            }
+          }
+        },
+        {
+          "pose": {
+            "arm_weapon": {
+              "rot": -62
+            },
+            "torso": {
+              "rot": -9
+            },
+            "arm_shield": {
+              "rot": -12
+            },
+            "head": {
+              "rot": -4
+            }
+          },
+          "hold": 2
+        }
+      ]
+    },
+    {
+      "name": "strike",
+      "fps": 14,
+      "loop": false,
+      "frames": [
+        {
+          "pose": {
+            "arm_weapon": {
+              "rot": -20
+            },
+            "torso": {
+              "rot": 2,
+              "dx": 1
+            },
+            "arm_shield": {
+              "rot": -4
+            }
+          }
+        },
+        {
+          "pose": {
+            "arm_weapon": {
+              "rot": 34
+            },
+            "torso": {
+              "rot": 10,
+              "dx": 2
+            },
+            "arm_shield": {
+              "rot": 6
+            },
+            "head": {
+              "rot": 6
+            }
+          }
+        },
+        {
+          "pose": {
+            "arm_weapon": {
+              "rot": 44
+            },
+            "torso": {
+              "rot": 8,
+              "dx": 1
+            },
+            "arm_shield": {
+              "rot": 4
+            },
+            "head": {
+              "rot": 4
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "recover",
+      "fps": 8,
+      "loop": false,
+      "frames": [
+        {
+          "pose": {
+            "arm_weapon": {
+              "rot": 22
+            },
+            "torso": {
+              "rot": 4
+            }
+          }
+        },
+        {
+          "pose": {
+            "arm_weapon": {
+              "rot": 8
+            },
+            "torso": {
+              "rot": 1
+            }
+          }
+        }
+      ]
+    }
+  ],
+  "symmetry_x": 25,
+  "underlap": 6
+}
