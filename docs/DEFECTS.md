@@ -23,6 +23,9 @@ The thesis this tests: *eyes scale with the number of primitives, not the number
 | 12 | `stage-3d` does not produce a real back view (a mirrored front, face showing). **Partly addressed:** `edit-krea2` gives a blank-cranium head; the torso is still a front ribcage and the shield is still front-facing | model limitation; one run each | body-level back art, or accept a flipped front where the back is not scrutinised |
 | 13 | Diffusion profiles vary in quality within one run (one clean, one muddy) | independent generations | generate several and pick, or gate on palette-purity of the corrected result |
 
+| 14 | Diffusion turnaround views come back at different pixel scales and each derives its own palette | the models do not preserve pixel size | `pixelize.py --height` and `--palette-from` (done); rare accent colours are still partly lost (boar snout stays paler than the original pink) |
+| 15 | Inputs are a mix of front-facing and already-3/4 subjects, and the pipeline assumes a front view | generated entities vary | a facing classifier (silhouette mirror symmetry) that picks the anchor view; not built |
+
 ## Backlog (deliberately not done, from the handoff)
 
 Ordered as the handoff ordered them; item numbers are its section numbers.

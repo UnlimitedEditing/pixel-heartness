@@ -57,6 +57,61 @@ def background_mask(rgb: np.ndarray, thr: int = 235, speck: int = 150) -> np.nda
     return bg
 
 
+def derive_palette(img: Image.Image, bg: np.ndarray, colours: int,
+                   far: float = 45.0, min_px: int = 120, extra: int = 4) -> np.ndarray:
+    """A palette of `colours` taken from the figure itself, for when there is no source sprite.
+
+    Median cut finds the dominant colours and merges a rare one into its neighbour, which
+    is exactly wrong for the accents that matter most in a sprite: a pink snout, an eye
+    highlight, a gem. So after the median cut, any group of at least `min_px` pixels sitting
+    more than `far` (RGB distance) from every palette colour is clustered and added back,
+    up to `extra` more colours. Background pixels are ignored."""
+    rgb = np.array(img.convert("RGB"))
+    fig = rgb[~bg]
+    strip = Image.fromarray(fig.reshape(1, -1, 3).astype(np.uint8), "RGB")
+    q = strip.quantize(colors=colours, method=Image.Quantize.MEDIANCUT)
+    pal = np.array(q.getpalette()[:colours * 3], dtype=np.uint8).reshape(-1, 3)[np.unique(np.array(q).ravel())]
+    d = np.sqrt(((fig[:, None, :].astype(np.float32) - pal[None].astype(np.float32)) ** 2).sum(axis=2)).min(axis=1)
+    out = fig[d > far]
+    if len(out) >= min_px:
+        s2 = Image.fromarray(out.reshape(1, -1, 3).astype(np.uint8), "RGB")
+        q2 = s2.quantize(colors=extra, method=Image.Quantize.MEDIANCUT)
+        p2 = np.array(q2.getpalette()[:extra * 3], dtype=np.uint8).reshape(-1, 3)
+        idx2 = np.array(q2).ravel()
+        for k in np.unique(idx2):
+            if (idx2 == k).sum() >= min_px:
+                pal = np.vstack([pal, p2[k]])
+    return pal
+
+
+def estimate_texel(img: Image.Image, bg: np.ndarray, lo: int = 5, hi: int = 48) -> float:
+    """The pixel period of a diffusion 'pixel art' image, from its own edges.
+
+    Pixel blocks change colour only at block boundaries, so the column and row
+    gradient profiles are periodic with the texel size. The autocorrelation of the
+    profile peaks at that period; the strongest peak within [lo, hi] wins, and the
+    two axes are averaged. (Purity of cells cannot pick the size by itself: it is
+    trivially best at 1 px, which is why the search elsewhere is only a refinement.)"""
+    g = np.array(img.convert("L"), dtype=np.float32)
+    ys, xs = np.where(~bg)
+    g = g[ys.min():ys.max() + 1, xs.min():xs.max() + 1]
+    periods = []
+    for axis in (0, 1):
+        d = np.abs(np.diff(g, axis=axis)).sum(axis=1 - axis)
+        d = d - d.mean()
+        ac = np.correlate(d, d, mode="full")[len(d) - 1:]
+        ac = ac / max(ac[0], 1e-9)
+        best = max(range(lo, min(hi, len(ac) - 2)), key=lambda k: ac[k] - 0.5 * (ac[k - 1] + ac[k + 1]) * 0.0 + ac[k])
+        # prefer the fundamental over its multiples: the smallest lag within 10% of the peak height
+        peak = ac[best]
+        for k in range(lo, best):
+            if ac[k] >= 0.9 * peak and ac[k] >= ac[k - 1] and ac[k] >= ac[k + 1]:
+                best = k
+                break
+        periods.append(float(best))
+    return float(np.mean(periods))
+
+
 def snap(rgb: np.ndarray, pal: np.ndarray) -> np.ndarray:
     """Index of the nearest palette colour per pixel (plain RGB distance)."""
     flat = rgb.reshape(-1, 3).astype(np.int32)
@@ -88,7 +143,7 @@ def _cell_votes(tables, xs, ys):
     return (tables[:, y1, x1] - tables[:, y0, x1] - tables[:, y1, x0] + tables[:, y0, x0])
 
 
-def pixelize(img: Image.Image, src: Image.Image, texel: float, refine: float = 0.05):
+def pixelize(img: Image.Image, src, texel: float, refine: float = 0.05, palette=None):
     """Returns an RGBA sprite on the texel grid, with its palette taken from `src`.
 
     The texel size is a starting point, not an answer: half a pixel of error per
@@ -96,9 +151,9 @@ def pixelize(img: Image.Image, src: Image.Image, texel: float, refine: float = 0
     (a 23 px texel estimated at 22.5 recovered 2% of the sprite). So size and
     offset are searched together for the grid whose cells are purest -- most of
     each cell agreeing on one palette colour -- within `refine` of the estimate."""
-    pal = palette_of(src)
     rgb = np.array(img.convert("RGB"))
     bg = background_mask(rgb)
+    pal = palette if palette is not None else palette_of(src)
     x0, y0, x1, y1 = figure_box(bg)
     idx = snap(rgb, pal)
     K = len(pal)
@@ -163,23 +218,54 @@ def main():
     ap = argparse.ArgumentParser(description=__doc__,
                                  formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("image", type=Path)
-    ap.add_argument("source", type=Path)
+    ap.add_argument("source", type=Path, nargs="?", default=None,
+                    help="the original sprite, for its palette and height; omit with --auto")
+    ap.add_argument("--height", type=int, default=None, metavar="TEXELS",
+                    help="with --auto: force the sprite to this many texels tall, whatever the image's "
+                         "own pixel size, so every view of a ring shares one scale")
+    ap.add_argument("--palette-from", type=Path, default=None, metavar="IMAGE",
+                    help="with --auto: take the palette from this image (the anchor view) so every view "
+                         "of a ring shares one palette")
+    ap.add_argument("--auto", type=int, default=None, metavar="COLOURS",
+                    help="no source sprite: derive a palette of this many colours from the image "
+                         "and find the pixel period from its edges")
     ap.add_argument("--texel-from", type=Path, default=None,
                     help="another output of the same run whose height fixes the texel size")
     ap.add_argument("--out", type=Path, default=None)
     ap.add_argument("--report", action="store_true",
                     help="compare against the source sprite (only meaningful for the front view)")
     args = ap.parse_args()
-    src = Image.open(args.source)
-    ref = Image.open(args.texel_from or args.image)
-    t = texel_size(ref, src)
-    sprite = pixelize(Image.open(args.image), src, t)
+    if args.auto:
+        img = Image.open(args.image)
+        bg = background_mask(np.array(img.convert("RGB")))
+        if args.palette_from:
+            pimg = Image.open(args.palette_from)
+            pal = derive_palette(pimg, background_mask(np.array(pimg.convert("RGB"))), args.auto)
+        else:
+            pal = derive_palette(img, bg, args.auto)
+        if args.height:
+            x0, y0, x1, y1 = figure_box(bg)
+            t = (y1 - y0) / float(args.height)
+            refine = 0.02                 # the size is imposed, not estimated: only fine-tune
+            print("auto: %d-colour palette, forced %d texels tall = %.1f px per texel" % (len(pal), args.height, t))
+        else:
+            t = estimate_texel(img, bg)
+            refine = 0.08
+            print("auto: %d-colour palette, texel period %.1f px" % (len(pal), t))
+        sprite = pixelize(img, None, t, refine=refine, palette=pal)
+    else:
+        if args.source is None:
+            raise SystemExit("pixelize: give the source sprite, or use --auto COLOURS")
+        src = Image.open(args.source)
+        ref = Image.open(args.texel_from or args.image)
+        t = texel_size(ref, src)
+        sprite = pixelize(Image.open(args.image), src, t)
     print("texel estimate %.2f px -> refined %.2f px, result %dx%d"
           % (t, pixelize.last_texel, sprite.width, sprite.height))
     if args.out:
         sprite.save(args.out)
         print("wrote", args.out)
-    if args.report:
+    if args.report and not args.auto:
         m, tot, dx, dy = compare(sprite, src)
         print("matches the source sprite on %d of %d texels (%.1f%%) after a shift of (%d,%d)"
               % (m, tot, 100.0 * m / tot, dx, dy))

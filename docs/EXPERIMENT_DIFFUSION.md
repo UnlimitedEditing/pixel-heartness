@@ -108,3 +108,43 @@ front, so that matters less than it would for another subject.
 **How it was used:** per part. Only the head takes edit-krea2's result; every other part keeps the
 flipped front, via the `back_art` view in the yaw spike (`docs/SPIKE_YAW.md`, branch
 `spike-yaw`). One run per strength, so run-to-run variance is again unknown.
+
+## Follow-up 2: the boar, and `edit-qwen21`
+
+Run 2026-09-20. Two more findings, one about the workflow and one about the inputs.
+
+**Inputs are not always front views.** Generated entities arrive front-on (the skeleton, a crab) or
+already three-quarter (a boar). The pipeline therefore has to classify the facing first and work out
+which views of the ring it already has (the *anchor*) and which it must produce. The ring has only
+five unique views (0, 45, 90, 135, 180 degrees); the other three are mirrors. A silhouette-symmetry
+score would separate a front view (high) from a 3/4 view (low); not yet built or measured.
+
+**`edit-qwen21` rotates well; `edit-krea2` barely does.** Qwen-Image 2.1 image-to-image edit, ~65 s,
+one run per prompt, from the 3/4 boar:
+
+| prompt | result |
+|---|---|
+| rotate to face the camera | clean, symmetric front, same mane, ears, tusks, palette |
+| rotate to a perfect side profile facing left | on-model side view: tusks, striped flank, curled tail kept |
+| rotate to show it from directly behind | plausible rear: ears from behind, mane ridge, central tail, hooves |
+
+By contrast `edit-krea2` at strength 0.65, asked for a 3/4 of the skeleton, returned the front view
+with the shield enlarged and the torso narrowed, head still frontal. `stage-8view` returned no images
+at all on the skeleton (cause not investigated). One run each throughout: variance is unknown.
+
+**Making the views a ring: `pixelize.py --auto`.** The views come back at different pixel scales
+(native texel 12.6, 11.1 and 14.7 px; 45 to 62 texels tall) and each would get its own palette. New
+options, no source sprite needed:
+- `--auto N`: palette of N colours from the image itself (median cut, plus a step that adds back any
+  sizeable colour far from the palette, because median cut merges accents such as a pink snout or a
+  tusk white into their neighbours) and the pixel period from the autocorrelation of the image's
+  edges (exact on degraded synthetic data at 10, 14, 17, 20 and 23 px);
+- `--height T`: force the sprite to T texels tall, so every view shares one scale;
+- `--palette-from IMAGE`: take the palette from the anchor view, so every view shares one palette.
+
+Result on the boar (anchor = the 3/4 input, height 46): front 33x47, 3/4 58x46, side 72x48, rear
+35x48, one shared 24-colour palette. The snout is still paler than the original pink.
+
+**Not yet done:** the 135-degree rear three-quarter (one more edit), the asymmetry patch for mirrored
+views (matters for the skeleton's shield and weapon hand, likely little for the boar), a facing
+classifier, and driving any of this from `yaw`.
