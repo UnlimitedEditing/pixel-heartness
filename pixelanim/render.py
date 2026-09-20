@@ -57,7 +57,7 @@ class Parts:
             raise SystemExit("render: parts dir has no layer for %s" % ", ".join(missing))
 
 
-def compose(rig: riglib.Rig, parts: Parts, pose: dict, offset=(0, 0), cull=True, squash=0.0):
+def compose(rig: riglib.Rig, parts: Parts, pose: dict, offset=(0, 0), cull=True, squash=0.0, yaw=0.0):
     """One frame. Returns (rgba, synth_visible, owner): `synth_visible` is True
     where the winning texel came from synthesised fill rather than authored art,
     and `owner` is the 1-based index into rig.parts of whichever part won.
@@ -78,9 +78,13 @@ def compose(rig: riglib.Rig, parts: Parts, pose: dict, offset=(0, 0), cull=True,
                       [0.0, 0.0, 1.0]])
     if squash:
         shift = shift @ riglib.squash_matrix(squash, rig.squash_base())
+    order = list(range(len(rig.parts)))
+    if yaw:
+        ym, order = riglib.yaw_matrix(rig, parts, yaw)
+        shift = shift @ ym
     cache = {}
     layers = []
-    for p in rig.parts:                      # backmost first; later parts win
+    for p in rig.parts:                      # layers stay in rig order; `order` sorts them below
         n = p["name"]
         m = shift @ riglib.world_matrix(rig, n, pose, cache)
         v = pose.get(n, {}).get("variant")
@@ -99,7 +103,8 @@ def compose(rig: riglib.Rig, parts: Parts, pose: dict, offset=(0, 0), cull=True,
         out = np.zeros((CH, CW, 4), dtype=np.uint8)
         synth_vis = np.zeros((CH, CW), dtype=bool)
         owner = np.zeros((CH, CW), dtype=np.int32)   # 1-based index into rig.parts
-        for i, (px, sm) in enumerate(layers):
+        for i in order:                      # backmost first; later parts win
+            px, sm = layers[i]
             hit = (px[:, :, 3] > riglib.ALPHA_CUT) & ~drop[i]
             out[hit] = px[hit]
             synth_vis[hit] = sm[hit]
@@ -153,9 +158,9 @@ def render_all(rig: riglib.Rig, parts: Parts):
         first = len(frames)
         resolved = riglib.resolve_state(rig, state)
         for fr, rs in zip(state["frames"], resolved):
-            pose, sq = rs["pose"], rs["squash"]
+            pose, sq, yw = rs["pose"], rs["squash"], rs.get("yaw", 0.0)
             off = (0, 0) if state["name"] in airborne else ground_lock(rig, parts, pose, sq)
-            rgba, synth, owner = compose(rig, parts, pose, off, squash=sq)
+            rgba, synth, owner = compose(rig, parts, pose, off, squash=sq, yaw=yw)
             frames.append(dict(rgba=rgba, synth=synth, owner=owner, state=state["name"],
                                pose=pose, squash=sq, offset=off,
                                ms=int(1000.0 / fps * int(fr.get("hold", 1)))))

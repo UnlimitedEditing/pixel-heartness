@@ -164,7 +164,8 @@ def resolve_state(rig: Rig, state: dict) -> list[dict]:
                         pose.setdefault(n, {})["rot"] = own + extra
                     own += extra
                 eff[n] = own
-            resolved.append(dict(pose=pose, squash=float(fr.get("squash", 0.0))))
+            resolved.append(dict(pose=pose, squash=float(fr.get("squash", 0.0)),
+                                 yaw=float(fr.get("yaw", 0.0))))
     return resolved
 
 
@@ -178,6 +179,43 @@ def squash_matrix(amount: float, base) -> np.ndarray:
     return np.array([[sx, 0.0, bx - sx * bx],
                      [0.0, sy, by - sy * by],
                      [0.0, 0.0, 1.0]])
+
+
+def yaw_matrix(rig: Rig, parts, yaw_deg: float):
+    """SPIKE. Turn the whole figure about its vertical axis as a stack of flat
+    cards, and return (matrix, draw_order).
+
+    Every card sits at some lateral offset from the body axis and some depth.
+    Rotating by `t` about the axis maps the lateral offset by cos(t) -- for a
+    card that is an x-scale about the axis, position and width together -- and
+    moves it in depth by (offset * sin t). So the matrix is one horizontal scale,
+    and the only per-part effect is the draw order: sort by depth.
+
+    A card seen edge-on has no width, but a body does, so |cos t| is clamped at
+    `yaw_thickness` (default 0.4). Past 90 degrees the scale goes negative: the
+    card is mirrored, so "back" is the front flipped. That is a stand-in, not a
+    back view; real back art needs part variants.
+
+    Depth of a part at yaw 0 comes from its draw order (`depth_step` texels per
+    rank, default 2), so a shield drawn in front of a torso starts in front.
+    """
+    t = math.radians(yaw_deg)
+    ax = float(rig.data.get("symmetry_x", 0.0)) if "symmetry_x" in rig.data else         float(next(p for p in rig.parts if not p.get("parent"))["pivot"][0])
+    thick = float(rig.data.get("yaw_thickness", 0.4))
+    step = float(rig.data.get("depth_step", 2.0))
+    c, s = math.cos(t), math.sin(t)
+    scale = math.copysign(max(abs(c), thick), c if c else 1.0)
+    depths = []
+    n = len(rig.parts)
+    for i, p in enumerate(rig.parts):
+        a = parts.layer[p["name"]][:, :, 3] > ALPHA_CUT
+        xs = np.where(a.any(axis=0))[0]
+        xc = float(xs.mean()) + 0.5 if len(xs) else ax
+        base = (i - (n - 1) / 2.0) * step
+        depths.append(base * c + (xc - ax) * s)
+    order = sorted(range(n), key=lambda i: (depths[i], i))
+    m = np.array([[scale, 0.0, ax - scale * ax], [0.0, 1.0, 0.0], [0.0, 0.0, 1.0]])
+    return m, order
 
 
 def load_rig(path) -> Rig:
