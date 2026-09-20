@@ -4,3 +4,4 @@ out/
 data/
 *.aseprite
 *.stamp
+examples/*/views/_rig_*.json

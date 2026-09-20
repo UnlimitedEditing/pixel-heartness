@@ -85,3 +85,37 @@ The variant is stored raw (lateral layout unswapped) because the mirrored `back`
 weak: the chest is a dark mass and the shield is drawn over the torso with a smeared emblem
 (underlap fill; up to ~29% of a frame's visible texels are invented). One of the three tells of
 a fake back is fixed.
+
+## Update: per-part segmentation of five generated views (skeleton)
+
+Third spike step, same branch. The five unique views of the skeleton (front, 3/4, side, rear 3/4 with its
+shield moved across, rear; see `docs/EXPERIMENT_DIFFUSION.md`) are now cut into the rig's eight parts and
+driven by `yaw`, so each part chooses its own view art and the character turns as one body.
+
+**Pipeline (`examples/skeleton_warrior/`):**
+1. `make_ring_views.py` registers each view into the 48x48 cell: body axis (found with the handed items
+   excluded) on the front's axis (cell column 24.5), lowest texel on the ground row 46. A variant image the
+   size of the cell is placed at 0,0, so registered art lines up across views.
+2. `segment_views.py` proposes seeds per view from geometry and colour (shield = largest red-family
+   component, glove = the next, head above the narrowest row under the skull, torso/pelvis/legs on the axis
+   by height), cuts with `segment.py`'s flood (seed validation on: passed on all four views), writes a label
+   picture (`skel_labels_*.png`) to check by eye, and exports each part's own texels per view.
+3. `make_turn_rig2.py` builds `rig_turn2.json`: 32 part variants, eight views (0, 45, 90, 135, 180, and 225 /
+   270 / 315 as mirrors), a 24-frame turn state, and `handed: true` on the shield and both arms.
+
+**In the renderer** (`riglib.yaw_plan`): a view can set `patch_handed`; in that mirrored view a `handed`
+part is not flipped, so the shield stays on its own side of the body. This is `mirror_patched` applied
+per part instead of per colour.
+
+**Reads well:** every frame is the same character; the shield travels left -> centre -> right -> centre ->
+left; parts never disagree about the view because they all come from the same registered image.
+
+**Gates:** palette, floaters, border, ground, synth (0.0% invented) pass. `holes` fails on the 3/4, rear and
+mirrored frames (5-22 enclosed texels): it counts enclosed background absent from the *front* pose, and a
+real 3/4 view legitimately has gaps between arm and body. It needs to compare a yaw frame against its own
+view, not the front. Defect logged.
+
+**Still rough:** frames change art at the 22.5-degree boundaries (a visible step between views, inherent to
+five drawn views); the rear 3/4 and its mirror have fragmentary legs and a floating foot from the generated
+art; the far leg hidden behind the shield in a 3/4 view is missing in that view; nothing here has a Lua
+mirror, so `agree` does not apply.

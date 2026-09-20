@@ -225,6 +225,8 @@ def yaw_plan(rig: Rig, parts, yaw_deg: float):
         r = math.radians(_wrap(yaw_deg - v["angle"]))
         scale = max(math.cos(r), thick)
         sgn = -1.0 if v.get("mirror") else 1.0
+        if v.get("patch_handed") and p.get("handed"):
+            sgn = 1.0      # a handed part (the shield and its arms) keeps its side in a mirrored view
         m = np.array([[sgn * scale, 0.0, ax - sgn * scale * ax], [0.0, 1.0, 0.0], [0.0, 0.0, 1.0]])
         plan[name] = dict(variant=v.get("variant"), matrix=m, view=v["name"])
         base = (i - (n - 1) / 2.0) * step

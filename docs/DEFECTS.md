@@ -28,6 +28,8 @@ The thesis this tests: *eyes scale with the number of primitives, not the number
 
 | 16 | `facing.py` (silhouette mirror symmetry) misreads a front-facing subject that carries an asymmetric item: the skeleton front scores 0.62, below the boar's 3/4 (0.73). Front and rear boar score 0.97 and 0.96, side 0.67 | the shield makes the outline lopsided | an interior signal (face features) or a symmetry score with the asymmetric parts masked out; until then treat it as a hint, not a decision, and let the agent look at the image |
 
+| 17 | `holes` fails on yaw frames built from a view whose silhouette legitimately has gaps (arm away from body in a 3/4) | it counts enclosed background absent from the front pose, not from the frame's own view | compare a yaw frame against the rest silhouette of the view it uses; spike branch only |
+
 ## Backlog (deliberately not done, from the handoff)
 
 Ordered as the handoff ordered them; item numbers are its section numbers.
