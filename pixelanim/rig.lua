@@ -26,6 +26,15 @@ local aseStrip = rig.ase_strip_file or rig.strip_file:gsub("%.png$", "_ase.png")
 
 local CW, CH = rig.cell[1], rig.cell[2]
 
+-- variant art paths are relative to the rig file too
+for _, p in ipairs(rig.parts) do
+  for v, f in pairs(p.variants or {}) do
+    if not (f:match("^%a:[/" .. string.char(92) .. "]") or f:sub(1, 1) == "/") then
+      p.variants[v] = rigDir .. "/" .. f
+    end
+  end
+end
+
 -- ---------------------------------------------------------------- matrices
 -- 2x3 affine {a,b,c,d,e,f} mapping (x,y) -> (a*x + c*y + e, b*x + d*y + f)
 local function mid() return {1, 0, 0, 1, 0, 0} end
@@ -136,6 +145,19 @@ for _, layer in ipairs(parts.layers) do
 end
 for _, p in ipairs(rig.parts) do
   if not srcOf[p.name] then fail("parts file has no layer named '" .. p.name .. "'") end
+end
+
+-- Part variants: authored alternate art, swapped per frame by pose[part].variant.
+-- A full-size sprite placed by the same rule as the source (centred, bottom
+-- aligned), with no synthesised texels. Mirrors render.py's Parts.
+for _, p in ipairs(rig.parts) do
+  for v, f in pairs(p.variants or {}) do
+    local sp = app.open(f) or fail("cannot open variant " .. f)
+    local flat = Image(sp.width, sp.height, ColorMode.RGB)
+    flat:drawSprite(sp, 1)
+    srcOf[p.name .. "@" .. v] = {img = flat, ox = math.floor((CW - sp.width) / 2),
+                                 oy = CH - sp.height, variant = true}
+  end
 end
 
 do  -- the parts file and the provenance masks must come from the same segment.py run
@@ -264,7 +286,9 @@ out:deleteLayer(out.layers[1])
 local gdx, gdy = 0, 0
 local gsq = {1, 0, 0, 1, 0, 0} -- this frame's squash, applied after FK and before the shift
 local function renderPart(p, pose)
-  local s = srcOf[p.name]
+  local vname = pose[p.name] and pose[p.name].variant
+  local s = srcOf[vname and (p.name .. "@" .. vname) or p.name]
+    or fail("part " .. p.name .. " has no variant '" .. tostring(vname) .. "'")
   local m = mmul({1, 0, 0, 1, gdx, gdy}, mmul(gsq, worldMatrix(p, pose, {})))
   local inv = minv(m)
   if not inv then return nil, 0, 0 end
@@ -281,7 +305,7 @@ local function renderPart(p, pose)
   if minx > maxx or miny > maxy then return nil, 0, 0 end
 
   local dst = Image(maxx - minx + 1, maxy - miny + 1, ColorMode.RGB)
-  local syn, sm = {}, synthOf[p.name]
+  local syn, sm = {}, (not s.variant) and synthOf[p.name] or nil
   for Y = miny, maxy do
     syn[Y - miny] = {}
     for X = minx, maxx do

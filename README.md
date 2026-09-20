@@ -15,7 +15,7 @@ out/<name>_parts/             RGBA layer + provenance mask per part
    | render.py                pose + composite (fast path)
    | rig.lua (Aseprite)       same maths, for hand touch-ups (optional)
 out/<name>_strip.png + .json  frame strip + Aseprite-style tag table
-   | checks.py                twelve mechanical gates
+   | checks.py                thirteen mechanical gates
    | sheet.py                 look at it (grid, parts, contact sheet, gif, text maps)
 ```
 
@@ -57,7 +57,7 @@ JSON; relative paths (`source`, `parts_file`, `anim_file`, `strip_file`) resolve
 | `examples/skeleton_warrior/` | rig + source sprite: biped FK |
 | `examples/slime/`, `examples/wisp/` | squash/stretch and chain-lag subjects; `python examples/make_examples.py` regenerates them |
 | `docs/REFERENCE.md` | how the cut, gates, ground lock work |
-| `docs/DEFECTS.md` | every defect class, what found it, what gates it now |
+| `docs/DEFECTS.md` | **open defects, the deferred-work backlog**, and the log of every defect class |
 | `docs/HANDOFF.md` | history, evidence for the thesis, roadmap |
 
 ## Origin

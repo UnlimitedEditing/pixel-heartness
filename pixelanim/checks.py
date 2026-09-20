@@ -69,6 +69,8 @@ def gate_palette(rig, parts, frames, args):
     blends breaks loudly instead of silently."""
     src, _ = riglib.place_in_cell(Image.open(rig.data["source"]), rig.cell)
     ok_cols = set(map(tuple, src[:, :, :3][src[:, :, 3] > riglib.ALPHA_CUT].reshape(-1, 3)))
+    for arr in parts.variant_layer.values():      # authored variant art is authored
+        ok_cols |= set(map(tuple, arr[:, :, :3][arr[:, :, 3] > riglib.ALPHA_CUT].reshape(-1, 3)))
     bad = {}
     for i, fr in enumerate(frames):
         a = alpha(fr)
@@ -248,6 +250,45 @@ def gate_synth(rig, parts, frames, args):
     return True, lines or ["worst frame is %.1f%% invented texels" % worst]
 
 
+def gate_variant(rig, parts, frames, args):
+    """Part variants must be usable, not merely present.
+
+    Every pose that names a variant names a declared one; each variant's art
+    overlaps the part it replaces (IoU at least `variant_min_iou`, default 0.3),
+    because a variant that sits somewhere else is a mis-aligned sprite, not an
+    alternate pose; and every declared variant is used somewhere, since an unused
+    one is art nobody sees. Variant art is placed by the same rule as the source
+    sprite, so it should be the same size as the source.
+    """
+    declared = {(p["name"], v) for p in rig.parts for v in p.get("variants", {})}
+    if not declared:
+        return True, ["no variants declared"]
+    bad, used = [], set()
+    for st in rig.states:
+        for j, fr in enumerate(st["frames"]):
+            for part, pose in fr.get("pose", {}).items():
+                v = pose.get("variant")
+                if not v:
+                    continue
+                if (part, v) not in declared:
+                    bad.append("%s frame %d: %s has no variant '%s'" % (st["name"], j, part, v))
+                used.add((part, v))
+    floor = float(rig.data.get("variant_min_iou", 0.3))
+    for (n, v) in sorted(declared):
+        a = parts.variant_layer[(n, v)][:, :, 3] > riglib.ALPHA_CUT
+        # the part's own authored texels: synthesised underlap is not what a
+        # variant is meant to line up with
+        b = (parts.layer[n][:, :, 3] > riglib.ALPHA_CUT) & ~parts.synth[n]
+        iou = float((a & b).sum()) / max(1, int((a | b).sum()))
+        if iou < floor:
+            bad.append("%s/%s overlaps the part's own art by only %.0f%% (min %.0f%%) -- misaligned?"
+                       % (n, v, 100 * iou, 100 * floor))
+    unused = sorted(declared - used)
+    if unused:
+        bad.append("declared but never used: " + ", ".join("%s/%s" % u for u in unused))
+    return not bad, bad or ["%d variants, all used and aligned" % len(declared)]
+
+
 def gate_volume(rig, parts, frames, args):
     """Squash and stretch must conserve volume. The matrix does by construction
     (sx = 1/sy); nearest-neighbour sampling then drops or duplicates whole rows
@@ -354,7 +395,7 @@ def gate_agree(rig, parts, frames, args):
 
 GATES = [("rest", gate_rest), ("palette", gate_palette), ("holes", gate_holes),
          ("floaters", gate_floaters), ("border", gate_border), ("wholetexel", gate_wholetexel), ("ground", gate_ground),
-         ("distinct", gate_distinct), ("synth", gate_synth), ("volume", gate_volume),
+         ("distinct", gate_distinct), ("synth", gate_synth), ("volume", gate_volume), ("variant", gate_variant),
          ("lag", gate_lag), ("agree", gate_agree)]
 
 

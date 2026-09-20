@@ -43,6 +43,15 @@ class Parts:
             n = entry["name"]
             self.layer[n] = np.array(Image.open(self.dir / entry["layer"]).convert("RGBA"))
             self.synth[n] = np.array(Image.open(self.dir / entry["synth"]).convert("RGBA"))[:, :, 3] > 127
+        # Part variants: authored alternate art for a part, swapped in per frame
+        # with `pose[part].variant`. Drawn as a full-size sprite the same size as
+        # the source, so it lines up by the same placement rule. Nothing in it is
+        # invented, so its synth mask is empty.
+        self.variant_layer = {}
+        for p in rig.parts:
+            for v, f in p.get("variants", {}).items():
+                arr, _ = riglib.place_in_cell(Image.open(f), rig.cell)
+                self.variant_layer[(p["name"], v)] = arr
         missing = [p["name"] for p in rig.parts if p["name"] not in self.layer]
         if missing:
             raise SystemExit("render: parts dir has no layer for %s" % ", ".join(missing))
@@ -74,8 +83,16 @@ def compose(rig: riglib.Rig, parts: Parts, pose: dict, offset=(0, 0), cull=True,
     for p in rig.parts:                      # backmost first; later parts win
         n = p["name"]
         m = shift @ riglib.world_matrix(rig, n, pose, cache)
-        layers.append((riglib.sample_nearest(parts.layer[n], m, rig.cell),
-                       riglib.sample_mask_nearest(parts.synth[n], m, rig.cell)))
+        v = pose.get(n, {}).get("variant")
+        if v:
+            if (n, v) not in parts.variant_layer:
+                raise SystemExit("render: part %s has no variant '%s'" % (n, v))
+            layer = parts.variant_layer[(n, v)]
+            synth = np.zeros((CH, CW), dtype=bool)
+        else:
+            layer, synth = parts.layer[n], parts.synth[n]
+        layers.append((riglib.sample_nearest(layer, m, rig.cell),
+                       riglib.sample_mask_nearest(synth, m, rig.cell)))
 
     drop = [np.zeros((CH, CW), dtype=bool) for _ in layers]
     for _ in range(4):                       # converges in one or two passes

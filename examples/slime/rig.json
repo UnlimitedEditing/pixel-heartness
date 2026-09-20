@@ -39,6 +39,14 @@
         [
           21,
           25
+        ],
+        [
+          16,
+          23
+        ],
+        [
+          16,
+          21
         ]
       ]
     },
@@ -64,7 +72,10 @@
           18,
           23
         ]
-      ]
+      ],
+      "variants": {
+        "blink": "slime_eyes_blink.png"
+      }
     }
   ],
   "states": [
@@ -81,7 +92,12 @@
           "squash": 0.08
         },
         {
-          "squash": 0.0
+          "squash": 0.0,
+          "pose": {
+            "eyes": {
+              "variant": "blink"
+            }
+          }
         },
         {
           "squash": -0.05
@@ -139,7 +155,12 @@
       "loop": false,
       "frames": [
         {
-          "squash": 0.34
+          "squash": 0.34,
+          "pose": {
+            "eyes": {
+              "variant": "blink"
+            }
+          }
         },
         {
           "squash": -0.12

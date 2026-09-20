@@ -64,6 +64,13 @@ def slime():
     for x in (7, 13):
         a[7, x] = (20, 20, 30, 255)
     save(d / "slime.png", a)
+    # blink variant: same texels as the eyes, redrawn closed -- body green above,
+    # the outline colour as the lid line. Colours come from the source palette.
+    bl = blank(W, H)
+    for x in (6, 7, 12, 13):
+        bl[6, x] = (96, 204, 104, 255)
+        bl[7, x] = (18, 30, 22, 255)
+    save(d / "slime_eyes_blink.png", bl)
     ox, oy = place(a, cell)
     ex = np.zeros((H, W), bool); ex[6:8, 6:8] = True; ex[6:8, 12:14] = True
     rig = {
@@ -75,13 +82,15 @@ def slime():
         "_note": "squash/stretch demo. `squash` is per frame: >0 flattens, <0 stretches, area conserved about the floor line under the root.",
         "parts": [
             {"name": "body", "rect": [ox, oy, W, H], "pivot": [ox + 10, oy + H - 1],
-             "seeds": [[ox + 10, oy + 11], [ox + 4, oy + 8], [ox + 15, oy + 8]]},
+             "seeds": [[ox + 10, oy + 11], [ox + 4, oy + 8], [ox + 15, oy + 8], [ox + 10, oy + 6], [ox + 10, oy + 4]]},
             {"name": "eyes", "rect": [ox + 6, oy + 6, 8, 2], "pivot": [ox + 10, oy + 7],
-             "parent": "body", "seeds": [[ox + 6, oy + 6], [ox + 12, oy + 6]]},
+             "parent": "body", "seeds": [[ox + 6, oy + 6], [ox + 12, oy + 6]],
+             "variants": {"blink": "slime_eyes_blink.png"}},
         ],
         "states": [
             {"name": "idle", "fps": 4, "loop": True, "min_distinct": 0.5, "frames": [
-                {"squash": 0.0}, {"squash": 0.08}, {"squash": 0.0}, {"squash": -0.05}]},
+                {"squash": 0.0}, {"squash": 0.08},
+                {"squash": 0.0, "pose": {"eyes": {"variant": "blink"}}}, {"squash": -0.05}]},
             {"name": "windup", "fps": 10, "loop": False, "frames": [
                 {"squash": 0.12}, {"squash": 0.30, "hold": 2}]},
             {"name": "air", "fps": 8, "loop": False, "frames": [
@@ -89,7 +98,7 @@ def slime():
                 {"squash": -0.12, "pose": {"body": {"dy": -10}}},
                 {"squash": 0.0, "pose": {"body": {"dy": -8}}}]},
             {"name": "land", "fps": 10, "loop": False, "frames": [
-                {"squash": 0.34}, {"squash": -0.12}, {"squash": 0.10}, {"squash": 0.0}]},
+                {"squash": 0.34, "pose": {"eyes": {"variant": "blink"}}}, {"squash": -0.12}, {"squash": 0.10}, {"squash": 0.0}]},
         ],
     }
     (d / "rig.json").write_text(json.dumps(rig, indent=2), encoding="utf-8")

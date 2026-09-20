@@ -33,6 +33,10 @@ class Rig:
                 data[key] = (path.resolve().parent / data[key]).as_posix()
         self.cell = (int(data["cell"][0]), int(data["cell"][1]))
         self.parts = list(data["parts"])          # backmost first == z order
+        for p in self.parts:                      # variant art, relative to the rig file
+            for v, f in list(p.get("variants", {}).items()):
+                if not Path(f).is_absolute():
+                    p["variants"][v] = (path.resolve().parent / f).as_posix()
         self.states = list(data.get("states", []))
         self.by_name = {p["name"]: p for p in self.parts}
         self.z = {p["name"]: i for i, p in enumerate(self.parts)}

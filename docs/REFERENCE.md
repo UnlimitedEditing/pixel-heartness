@@ -141,6 +141,7 @@ Exit status is the number of failures. Run after every rig change.
 | `synth` | reports how much of each frame the viewer sees that was invented |
 | `volume` | a squashed frame covers within `volume_tol` (default 15%) of the same pose unsquashed |
 | `lag` | each lagged part's tip sits at least ~0.75 texel from rigid FK, and its joint never gets more than `lag_max_deg` (default 25) of extra rotation |
+| `variant` | every variant is declared, used, and aligned with the part it replaces |
 | `agree` | a fresh `render.py` render matches `rig.lua`'s separate strip (`*_strip_ase.png`) in shape and colour; SKIPPED if absent, fails if stale |
 
 `distinct` takes its bar per state (`states[].min_distinct`, default 2%), because the
@@ -169,6 +170,18 @@ rotate a parent**: a `dx` swing of the root does not lag.
 **Small parts and rotation.** At ~12 texels, a head rotated 18-26 degrees comes out scrambled
 under nearest-neighbour sampling (eyes split, edge texels detach) and no gate says so. Keep
 rotation of small parts to about 8 degrees and let lag carry the motion elsewhere.
+
+**Part variants.** `parts[].variants: {"blink": "slime_eyes_blink.png"}`, used per frame as
+`pose: {"eyes": {"variant": "blink"}}`. A variant is *authored* alternate art for one part: a
+sprite the same size as the source, placed by the same centre/bottom rule, containing only that
+part's replacement texels. It inherits the part's pivot and FK chain, so it rotates and squashes
+like the part it replaces, and none of it counts as invented. This is what moves a head turn or
+a blink from "needs new information" into reach. The `palette` gate accepts variant colours, and
+the `variant` gate fails on an unknown variant name, on art that overlaps the part's own texels
+by under `variant_min_iou` (default 0.3, i.e. misaligned), and on a declared variant no state
+uses. Variants get no underlap, so a variant much smaller than the part exposes what was beneath
+it (defect #3 in DEFECTS.md); a variant that is a different silhouette needs the neighbours to
+cover the seam. `examples/slime` blinks this way.
 
 ## Ground lock
 

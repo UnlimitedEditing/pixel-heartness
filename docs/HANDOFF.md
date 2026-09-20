@@ -151,7 +151,7 @@ once the artefact had a name.
 2. **DONE 2026-09-20 (third session), see REFERENCE.md "Primitives beyond rigid FK":** **The two missing primitives from §3** — squash/stretch about a base line, and lag down a
    chain. Both are small, both unlock whole archetypes, and neither needs anything from the
    segmentation work.
-3. **Part variants** (§2's first deliverable) — cheaper now, because `segment.py` already
+3. **DONE 2026-09-20 (third session), see REFERENCE.md "Part variants":** **Part variants** (§2's first deliverable) — cheaper now, because `segment.py` already
    emits one file per part and the manifest can carry alternates.
 4. Only then the motion-reference work in §9.
 
