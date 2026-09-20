@@ -64,7 +64,7 @@ def outline_of(mask: np.ndarray) -> np.ndarray:
 
 def view_grid(rig, args):
     res = segment.segment(rig, args.underlap, args.colour_lambda, args.fill,
-                          args.extend_outside, args.symmetry_x, quiet=True)
+                          args.extend_outside, args.symmetry_x, quiet=True, allow_bad_seeds=True)
     CW, CH = rig.cell
     S, M = args.zoom, 34
     img = Image.new("RGB", (CW * S + M, CH * S + M), BG)
@@ -178,7 +178,7 @@ def view_map(rig, args, parts_dir):
     see. Rendering both is cheap; guessing is not.
     """
     res = segment.segment(rig, int(rig.data.get("underlap", 6)), args.colour_lambda,
-                          args.fill, args.extend_outside, args.symmetry_x, quiet=True)
+                          args.fill, args.extend_outside, args.symmetry_x, quiet=True, allow_bad_seeds=True)
     CW, CH = rig.cell
     rgba, opaque = res["rgba"], res["opaque"]
     lines = []

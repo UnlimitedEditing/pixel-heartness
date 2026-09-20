@@ -19,7 +19,7 @@ Three stages, each separately inspectable:
 The result is one cell-sized RGBA layer per part plus a `synth` provenance mask,
 which render.py transforms in lockstep and checks.py gates.
 
-    python pixelanim/segment.py pixelanim/examples/skeleton_warrior/rig.json --underlap 3
+    python pixelanim/segment.py examples/skeleton_warrior/rig.json --underlap 3
 """
 from __future__ import annotations
 
@@ -370,7 +370,54 @@ def fill_region(rgba, own, synth, mode, axis_x):
 
 # ---------------------------------------------------------------------- main
 
-def segment(rig, underlap, colour_lambda, fill_mode, policy, axis_x=None, quiet=False):
+def validate_seeds(rig, rgba, opaque, lab, idx):
+    """Return a list of problems with the seeds a rig supplies.
+
+    Two kinds. A seed off the subject (out of the cell, or on a transparent
+    texel) is silently dropped by the flood, so the part is cut from fewer
+    hints than the author thinks. A seed on a colour that another part owns is
+    the failure that actually happened: two seeds landed on the shield's dark
+    red instead of bone, and `leg_l` quietly took a strip of the shield. On
+    screen those colours are indistinguishable at any zoom, so this checks the
+    colour rather than the picture.
+
+    Measured on the finished labelling, over the connected patch of the seed's
+    exact colour: the seed is an outlier for part P when P holds under 20% of
+    that patch while some other single part holds at least 50%. It is patch
+    based because colours recur across parts (bone cream on skull and legs, red
+    on shield and sword), so a whole-image count flags legitimate seeds.
+    """
+    CW, CH = rig.cell
+    rgb = rgba[:, :, :3]
+    problems = []
+    for p in rig.parts:
+        n = p["name"]
+        for sx, sy in p.get("seeds", []):
+            if not (0 <= sx < CW and 0 <= sy < CH):
+                problems.append("%s: seed (%d,%d) is outside the %dx%d cell" % (n, sx, sy, CW, CH))
+                continue
+            if not opaque[sy, sx]:
+                problems.append("%s: seed (%d,%d) is on a transparent texel" % (n, sx, sy))
+                continue
+            # the connected patch of this exact colour, not every texel of it: a
+            # skeleton reuses one bone cream on the skull and on both legs
+            same_col = opaque & (rgb == rgb[sy, sx]).all(axis=2)
+            comp, _ = ndimage.label(same_col, structure=np.ones((3, 3)))
+            same = comp == comp[sy, sx]
+            total = int(same.sum())
+            mine = int((same & (lab == idx[n])).sum())
+            top, top_name = max((int((same & (lab == idx[q["name"]])).sum()), q["name"])
+                                for q in rig.parts if q["name"] != n)
+            if mine < 0.2 * total and top >= 0.5 * total:
+                problems.append(
+                    "%s: seed (%d,%d) is on a patch of rgb%s, %d%% of which belongs to %s and only %d%% to %s"
+                    % (n, sx, sy, tuple(int(v) for v in rgb[sy, sx]),
+                       100 * top // total, top_name, 100 * mine // total, n))
+    return problems
+
+
+def segment(rig, underlap, colour_lambda, fill_mode, policy, axis_x=None, quiet=False,
+            allow_bad_seeds=False):
     src = Image.open(rig.data["source"])
     rgba, (ox, oy) = riglib.place_in_cell(src, rig.cell)
     opaque = riglib.binary_alpha(rgba)
@@ -380,6 +427,10 @@ def segment(rig, underlap, colour_lambda, fill_mode, policy, axis_x=None, quiet=
         axis_x = float(rig.data.get("symmetry_x", root["pivot"][0]))
 
     lab, idx, how, n_orphan = label_parts(rig, rgba, opaque, colour_lambda)
+    bad = validate_seeds(rig, rgba, opaque, lab, idx)
+    if bad and not allow_bad_seeds:
+        raise SystemExit("segment: refusing to cut with bad seeds (--allow-bad-seeds to override)\n  "
+                         + "\n  ".join(bad) + "\n  see colours: sheet.py map <rig> --what colours")
     extents, mirror_src, notes = build_extents(rig, lab, idx, opaque, underlap, policy, axis_x)
 
     layers, synths, warnings = {}, {}, []
@@ -481,13 +532,16 @@ def main():
     ap.add_argument("--extend-outside", default="none", choices=["none", "mirror", "free"])
     ap.add_argument("--symmetry-x", type=float, default=None)
     ap.add_argument("--out", type=Path, default=None)
+    ap.add_argument("--allow-bad-seeds", action="store_true",
+                    help="cut anyway when a seed is off the subject or on another part's colour")
     args = ap.parse_args()
 
     rig = riglib.load_rig(args.rig)
     # per-subject tuning belongs in the rig, not in whoever remembers the flag
     underlap = args.underlap if args.underlap is not None else int(rig.data.get("underlap", 6))
     res = segment(rig, underlap, args.colour_lambda, args.fill,
-                  args.extend_outside, args.symmetry_x)
+                  args.extend_outside, args.symmetry_x,
+                  allow_bad_seeds=args.allow_bad_seeds)
     out = args.out or rig.parts_dir()
     write_out(rig, res, out)
     print("wrote %d part layers -> %s" % (len(rig.parts), out))

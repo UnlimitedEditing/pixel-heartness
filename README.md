@@ -31,7 +31,7 @@ python pixelanim/sheet.py contact $RIG --mark-synth
 python pixelanim/sheet.py gif $RIG --state walk
 ```
 
-Views land in `./out/`. Author a new rig by rendering `sheet.py grid` first and reading seed/pivot coordinates off it — never type a coordinate you haven't seen.
+Views land in `./out/`. `segment.py` refuses seeds that sit off the subject or on a patch of colour another part owns (`--allow-bad-seeds` overrides; `sheet.py map <rig> --what colours` is the text dump to check against). Author a new rig by rendering `sheet.py grid` first and reading seed/pivot coordinates off it — never type a coordinate you haven't seen.
 
 ### Aseprite path (optional)
 
@@ -56,6 +56,7 @@ JSON; relative paths (`source`, `parts_file`, `anim_file`, `strip_file`) resolve
 | `pixelanim/` | segment, render, checks, sheet, riglib, rig.lua |
 | `examples/skeleton_warrior/` | rig + source sprite (all ten gates pass) |
 | `docs/REFERENCE.md` | how the cut, gates, ground lock work |
+| `docs/DEFECTS.md` | every defect class, what found it, what gates it now |
 | `docs/HANDOFF.md` | history, evidence for the thesis, roadmap |
 
 ## Origin

@@ -145,7 +145,7 @@ once the artefact had a name.
 
 ### What to do next, in order
 
-1. **Seed validation** in `segment.py` (above). Cheap, and it closes the one failure mode
+1. **DONE 2026-09-20 (third session):** ~~Seed validation~~ in `segment.py` (above). Cheap, and it closes the one failure mode
    that still needed a human. Pair it with a colour dump in `sheet.py`, since that is
    what actually caught the bad seeds.
 2. **The two missing primitives from §3** — squash/stretch about a base line, and lag down a
