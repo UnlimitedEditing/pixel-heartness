@@ -148,3 +148,34 @@ Result on the boar (anchor = the 3/4 input, height 46): front 33x47, 3/4 58x46, 
 **Not yet done:** the 135-degree rear three-quarter (one more edit), the asymmetry patch for mirrored
 views (matters for the skeleton's shield and weapon hand, likely little for the boar), a facing
 classifier, and driving any of this from `yaw`.
+
+## Follow-up 3: the boar's five unique views
+
+Run 2026-09-21. The 135-degree rear three-quarter, two independent generations (`edit-qwen21`,
+seeds 4101 and 7202, same prompt, from the 3/4 boar), pixelized with `--auto 20 --height 46
+--palette-from <3/4 anchor>`.
+
+| view | size (texels) | source |
+|---|---|---|
+| front | 33x47 | edit-qwen21 |
+| 3/4 | 58x46 | the input, pixelized |
+| side | 72x48 | edit-qwen21 |
+| rear 3/4 (a) | 48x48 | edit-qwen21, seed 4101 |
+| rear 3/4 (b) | 50x48 | edit-qwen21, seed 7202 |
+| rear | 35x48 | edit-qwen21 |
+
+Both rear-three-quarters read as the same boar seen mostly from behind: head turned away with the
+tusk at far left, rump and curled tail nearest the camera, striped back. They differ in leg
+positions and stripe detail, so two samples agree on the view and differ in detail. That is the
+first (small) evidence on run-to-run variance for this subject. All six share a scale and a
+24-colour palette. With the mirror images this is a complete eight-view ring for the boar, which is
+close to symmetric so the mirrors need little patching.
+
+Mistake on the way: the first two attempts submitted an invalid seed (a number with a letter
+appended), so nothing was generated and the folders were empty; the second attempt broke on a shell
+syntax error of mine. Both cost time, neither cost quota.
+
+**Facing classifier (`pixelanim/facing.py`).** Silhouette mirror symmetry: boar front 0.97, rear
+0.96, 3/4 0.73, side 0.67, and the skeleton front only 0.62, because its shield makes the outline
+lopsided. It separates a symmetric subject from an asymmetric one but misreads a front-facing subject
+carrying an asymmetric item. Treat it as a hint (open defect 16).
