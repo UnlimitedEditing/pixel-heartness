@@ -49,6 +49,12 @@ def background_mask(rgb: np.ndarray, thr: int = 235, speck: int = 150) -> np.nda
     lab, _ = ndimage.label(near)
     border = set(np.unique(np.concatenate([lab[0], lab[-1], lab[:, 0], lab[:, -1]]))) - {0}
     bg = np.isin(lab, list(border))
+    # The anti-aliased fringe of a silhouette is a thin band of near-white that the threshold
+    # above just misses. Left in, it snaps to the palette's white and, with rare colours
+    # boosted, wins the edge cells as white specks. So near-white pixels touching the
+    # background, within 3 px, are background too.
+    fringe = ndimage.binary_dilation(bg, iterations=3) & (rgb.min(axis=2) >= 205)
+    bg = bg | fringe
     fg, n = ndimage.label(~bg)
     if n:
         sizes = ndimage.sum(np.ones_like(fg), fg, index=np.arange(1, n + 1))
@@ -57,31 +63,67 @@ def background_mask(rgb: np.ndarray, thr: int = 235, speck: int = 150) -> np.nda
     return bg
 
 
-def derive_palette(img: Image.Image, bg: np.ndarray, colours: int,
-                   far: float = 45.0, min_px: int = 120, extra: int = 4) -> np.ndarray:
-    """A palette of `colours` taken from the figure itself, for when there is no source sprite.
+def derive_palette_multi(paths, colours: int, **kw) -> np.ndarray:
+    """One palette from several views at once. A colour that is tiny in one view (the pink
+    snout seen from three-quarters) can be large in another (seen head-on), so deriving from
+    the union keeps it. Views are stacked side by side and quantised together."""
+    tiles, masks = [], []
+    for path in paths:
+        im = Image.open(path).convert("RGB")
+        bg = background_mask(np.array(im))
+        tiles.append(np.array(im))
+        masks.append(bg)
+    H = max(t.shape[0] for t in tiles)
+    pad = lambda a, v: np.pad(a, ((0, H - a.shape[0]), (0, 0)) + ((0, 0),) * (a.ndim - 2), constant_values=v)
+    big = np.hstack([pad(t, 255) for t in tiles])
+    bgm = np.hstack([pad(m, True) for m in masks])
+    return derive_palette(Image.fromarray(big, "RGB"), bgm, colours, **kw)
 
-    Median cut finds the dominant colours and merges a rare one into its neighbour, which
-    is exactly wrong for the accents that matter most in a sprite: a pink snout, an eye
-    highlight, a gem. So after the median cut, any group of at least `min_px` pixels sitting
-    more than `far` (RGB distance) from every palette colour is clustered and added back,
-    up to `extra` more colours. Background pixels are ignored."""
+
+def derive_palette(img: Image.Image, bg: np.ndarray, colours: int, min_share: float = 0.0004,
+                   sep: float = 17.0, **_ignored) -> np.ndarray:
+    """A palette of up to `colours` flat colours taken from the figure itself.
+
+    Pixel art is made of flat colours, so the palette should be its most common *exact*
+    colours, not means. Median cut averages a saturated salmon snout together with the dark
+    pixels of the nostrils and outline and returns a dusty blend that is in none of the
+    pixels. Here the figure's pixels are histogrammed (4-bit per channel), and modes are
+    picked most-common first, skipping any mode within `sep` (RGB distance) of one already
+    picked, until `colours` are chosen or a mode falls under `min_share` of the figure. Each
+    pick is then refined to the mean of the raw pixels within `sep / 2` of it, which stays on
+    the flat colour because the neighbourhood is that colour plus its anti-aliasing."""
     rgb = np.array(img.convert("RGB"))
-    fig = rgb[~bg]
-    strip = Image.fromarray(fig.reshape(1, -1, 3).astype(np.uint8), "RGB")
-    q = strip.quantize(colors=colours, method=Image.Quantize.MEDIANCUT)
-    pal = np.array(q.getpalette()[:colours * 3], dtype=np.uint8).reshape(-1, 3)[np.unique(np.array(q).ravel())]
-    d = np.sqrt(((fig[:, None, :].astype(np.float32) - pal[None].astype(np.float32)) ** 2).sum(axis=2)).min(axis=1)
-    out = fig[d > far]
-    if len(out) >= min_px:
-        s2 = Image.fromarray(out.reshape(1, -1, 3).astype(np.uint8), "RGB")
-        q2 = s2.quantize(colors=extra, method=Image.Quantize.MEDIANCUT)
-        p2 = np.array(q2.getpalette()[:extra * 3], dtype=np.uint8).reshape(-1, 3)
-        idx2 = np.array(q2).ravel()
-        for k in np.unique(idx2):
-            if (idx2 == k).sum() >= min_px:
-                pal = np.vstack([pal, p2[k]])
-    return pal
+    fig = rgb[~bg].astype(np.int32)
+    q = (fig // 8) * 8 + 4
+    keys = (q[:, 0] << 16) | (q[:, 1] << 8) | q[:, 2]
+    vals, cnt = np.unique(keys, return_counts=True)
+    order = np.argsort(-cnt)
+    picked = []
+    for i in order:
+        if cnt[i] < min_share * len(fig) or len(picked) >= colours:
+            break
+        c = np.array([(vals[i] >> 16) & 255, (vals[i] >> 8) & 255, vals[i] & 255], dtype=np.float32)
+        if all(np.linalg.norm(c - p) > sep for p in picked):
+            picked.append(c)
+    pal = []
+    for c in picked:
+        near = fig[np.linalg.norm(fig.astype(np.float32) - c, axis=1) <= sep / 2]
+        pal.append(near.mean(axis=0) if len(near) else c)
+    return np.round(np.array(pal)).astype(np.uint8)
+
+
+def merge_close(pal: np.ndarray, fig: np.ndarray, dist: float = 13.0) -> np.ndarray:
+    """Drop palette colours that are practically another palette colour. Median cut happily
+    keeps three near-blacks (7,0,3), (2,1,2), (10,4,9), which splits an outline between them
+    and makes it ragged. Colours are visited most-used first; one is kept only if it is more
+    than `dist` (RGB distance) from every colour already kept."""
+    d = np.sqrt(((fig[:, None, :].astype(np.float32) - pal[None].astype(np.float32)) ** 2).sum(axis=2))
+    counts = np.bincount(d.argmin(axis=1), minlength=len(pal))
+    kept = []
+    for k in np.argsort(-counts):
+        if all(np.linalg.norm(pal[k].astype(np.float32) - pal[j].astype(np.float32)) > dist for j in kept):
+            kept.append(k)
+    return pal[sorted(kept)]
 
 
 def estimate_texel(img: Image.Image, bg: np.ndarray, lo: int = 5, hi: int = 48) -> float:
@@ -143,7 +185,9 @@ def _cell_votes(tables, xs, ys):
     return (tables[:, y1, x1] - tables[:, y0, x1] - tables[:, y1, x0] + tables[:, y0, x0])
 
 
-def pixelize(img: Image.Image, src, texel: float, refine: float = 0.05, palette=None):
+def pixelize(img: Image.Image, src, texel: float, refine: float = 0.05, palette=None,
+             preserve: float = 0.0, outline_boost: float = 2.0, restore: float = 0.0,
+             restore_colours=None):
     """Returns an RGBA sprite on the texel grid, with its palette taken from `src`.
 
     The texel size is a starting point, not an answer: half a pixel of error per
@@ -178,16 +222,86 @@ def pixelize(img: Image.Image, src, texel: float, refine: float = 0.05, palette=
                 pur = 1.0 - top[tot > 0] / tot[tot > 0]
                 score = float(pur.mean())           # mean impurity: comparable across sizes
                 if best is None or score < best[0]:
-                    best = (score, c.argmax(axis=0), tot, t)
-    _, arg, tot, t = best
+                    best = (score, c, tot, t, xs.copy(), ys.copy())
+    _, c, tot, t, gx, gy = best
+    pixelize.last_grid = (gx, gy)
+    # Plain majority voting loses whatever is thin or small: a 1-texel outline is often under
+    # half of its cell, a specular highlight is outvoted by the pupil round it, a pink snout by
+    # the tan beside it. `preserve` boosts rare colours (weight = share ** -preserve) and the
+    # darkest colour (the outline) is boosted again, so they win a cell when they cover a
+    # fair fraction of it instead of only when they cover most of it.
+    w = np.ones(K + 1, dtype=np.float64)
+    if preserve > 0:
+        share = np.array([(idx == k).sum() for k in range(K)], dtype=np.float64)
+        share = np.maximum(share, 1.0) / max(share.sum(), 1.0)
+        w[:K] = share ** -preserve
+        w[:K] /= w[:K].min()
+        dark = int(np.argmin(pal.astype(np.int32).sum(axis=1)))
+        w[dark] *= outline_boost
+    arg = (c * w[:, None, None]).argmax(axis=0)
     out = np.where((tot > 0) & (arg < K), arg, -1)
+    if restore > 0:
+        for (i, j, k, f, chosen) in missed_features(idx, K, out, (gx, gy), frac=restore):
+            if restore_colours is not None and k not in restore_colours:
+                continue
+            # a glint or an accent is inside the figure. Next to the background, a light
+            # "rare" colour is just the anti-aliased fringe of the silhouette: skip it.
+            nb = out[max(j - 1, 0):j + 2, max(i - 1, 0):i + 2]
+            edge = (j == 0 or i == 0 or j == out.shape[0] - 1 or i == out.shape[1] - 1
+                    or (nb < 0).any() or out[j, i] < 0)
+            if not edge:
+                out[j, i] = k
+    pixelize.last_index = out.copy()
     H, W = out.shape
     sprite = np.zeros((H, W, 4), dtype=np.uint8)
     solid = out >= 0
     sprite[solid, :3] = pal[out[solid]]
     sprite[solid, 3] = 255
     pixelize.last_texel = float(t)
+    pixelize.last_raw_idx = (idx, K)
     return Image.fromarray(sprite, "RGBA")
+
+
+def missed_features(raw_idx: np.ndarray, K: int, out_idx: np.ndarray, grid, rare: float = 0.04,
+                    frac: float = 0.18):
+    """The comparison sweep: cells where a *rare* colour covered a fair fraction of the cell in
+    the raw image but the corrected sprite shows something else. These are the eye glints, the
+    pink snout, the chipped outlines. Returns [(col, row, colour_index, fraction, chosen)]."""
+    gx, gy = grid
+    fig = raw_idx[raw_idx < K]
+    share = np.bincount(fig, minlength=K).astype(np.float64) / max(len(fig), 1)
+    dark = None
+    rows, cols = out_idx.shape
+    found = []
+    for j in range(min(rows, len(gy) - 1)):
+        y0, y1 = max(gy[j], 0), max(gy[j + 1], 0)
+        for i in range(min(cols, len(gx) - 1)):
+            x0, x1 = max(gx[i], 0), max(gx[i + 1], 0)
+            blk = raw_idx[y0:y1, x0:x1].ravel()
+            if not blk.size:
+                continue
+            cnt = np.bincount(blk, minlength=K + 1)
+            for k in range(K):
+                f = cnt[k] / blk.size
+                if f >= frac and share[k] <= rare and out_idx[j, i] != k:
+                    found.append((i, j, k, float(f), int(out_idx[j, i])))
+    return sorted(found, key=lambda t: -t[3])
+
+
+def representation(sprite: Image.Image, pal: np.ndarray, raw_idx: np.ndarray, K: int):
+    """For each palette colour, how much of the figure it makes up in the corrected sprite
+    against in the raw image (ratio of shares). A colour that shrinks a lot was lost by the
+    correction: thin outlines, small highlights and rare accents all show up here."""
+    a = np.array(sprite)
+    op = a[:, :, 3] > 127
+    out_share = np.zeros(K)
+    for k in range(K):
+        out_share[k] = ((a[:, :, :3] == pal[k]).all(axis=2) & op).sum()
+    out_share /= max(out_share.sum(), 1.0)
+    fig = raw_idx[raw_idx < K]
+    raw_share = np.bincount(fig, minlength=K).astype(np.float64) / max(len(fig), 1)
+    ratio = np.where(raw_share > 0, out_share / np.maximum(raw_share, 1e-9), 1.0)
+    return ratio, raw_share
 
 
 def compare(a: Image.Image, b: Image.Image):
@@ -220,6 +334,22 @@ def main():
     ap.add_argument("image", type=Path)
     ap.add_argument("source", type=Path, nargs="?", default=None,
                     help="the original sprite, for its palette and height; omit with --auto")
+    ap.add_argument("--restore", type=float, default=0.0, metavar="FRAC",
+                    help="with --auto: automatically restore any rare colour that covered at least this "
+                         "fraction of a cell in the raw image (0.2 is a fair start); blunt, so review it")
+    ap.add_argument("--restore-colours", default=None, metavar="R,G,B;R,G,B",
+                    help="with --restore: only restore these colours (nearest palette match). Choose the "
+                         "accents that matter after reading --sweep: whites, a pink snout, the outline")
+    ap.add_argument("--patch", type=Path, default=None,
+                    help='JSON list of {"x":, "y":, "colour":[r,g,b] or null} applied last: the '
+                         "touch-ups an agent writes after comparing the sprite with the raw image")
+    ap.add_argument("--sweep", action="store_true",
+                    help="list the cells where a rare colour was present in the raw image but lost")
+    ap.add_argument("--palette-also", type=Path, action="append", default=[], metavar="IMAGE",
+                    help="with --palette-from: further views to derive the shared palette from")
+    ap.add_argument("--preserve", type=float, default=0.0, metavar="GAMMA",
+                    help="with --auto: rarity-weighted voting (0 = plain majority; ~0.4 restores thin "
+                         "outlines, small highlights and rare accents)")
     ap.add_argument("--height", type=int, default=None, metavar="TEXELS",
                     help="with --auto: force the sprite to this many texels tall, whatever the image's "
                          "own pixel size, so every view of a ring shares one scale")
@@ -239,8 +369,7 @@ def main():
         img = Image.open(args.image)
         bg = background_mask(np.array(img.convert("RGB")))
         if args.palette_from:
-            pimg = Image.open(args.palette_from)
-            pal = derive_palette(pimg, background_mask(np.array(pimg.convert("RGB"))), args.auto)
+            pal = derive_palette_multi([args.palette_from] + list(args.palette_also), args.auto)
         else:
             pal = derive_palette(img, bg, args.auto)
         if args.height:
@@ -252,7 +381,36 @@ def main():
             t = estimate_texel(img, bg)
             refine = 0.08
             print("auto: %d-colour palette, texel period %.1f px" % (len(pal), t))
-        sprite = pixelize(img, None, t, refine=refine, palette=pal)
+        only = None
+        if args.restore_colours:
+            only = set()
+            for tok in args.restore_colours.split(";"):
+                c = np.array([int(v) for v in tok.split(",")], dtype=np.int32)
+                only.add(int(((pal.astype(np.int32) - c) ** 2).sum(axis=1).argmin()))
+        sprite = pixelize(img, None, t, refine=refine, palette=pal, preserve=args.preserve,
+                          restore=args.restore, restore_colours=only)
+        idx, K = pixelize.last_raw_idx
+        ratio, raw_share = representation(sprite, pal, idx, K)
+        lost = [(k, ratio[k], raw_share[k]) for k in range(K) if raw_share[k] >= 0.004 and ratio[k] < 0.7]
+        over = [(k, ratio[k], raw_share[k]) for k in range(K) if raw_share[k] >= 0.004 and ratio[k] > 1.5]
+        print("representation vs raw: worst under %.2f, worst over %.2f;  %d colours lost, %d inflated"
+              % (min([ratio[k] for k in range(K) if raw_share[k] >= 0.004] or [1]),
+                 max([ratio[k] for k in range(K) if raw_share[k] >= 0.004] or [1]), len(lost), len(over)))
+        if args.sweep:
+            for i, j, k, f, chosen in missed_features(idx, K, pixelize.last_index, pixelize.last_grid)[:25]:
+                print("    missed:  cell (%2d,%2d) rgb%s is %.0f%% of it, sprite has %s"
+                      % (i, j, tuple(int(v) for v in pal[k]), 100 * f,
+                         "nothing" if chosen < 0 else "rgb" + str(tuple(int(v) for v in pal[chosen]))))
+        if args.patch:
+            import json
+            arr = np.array(sprite)
+            for e in json.loads(args.patch.read_text(encoding="utf-8")):
+                x, y, c = int(e["x"]), int(e["y"]), e.get("colour")
+                arr[y, x] = [0, 0, 0, 0] if c is None else [c[0], c[1], c[2], 255]
+            sprite = Image.fromarray(arr, "RGBA")
+        for k, r, s in sorted(lost, key=lambda x: x[1])[:4]:
+            print("    lost:    rgb%s kept %.0f%% of its raw share (%.1f%% of the figure)"
+                  % (tuple(int(v) for v in pal[k]), 100 * r, 100 * s))
     else:
         if args.source is None:
             raise SystemExit("pixelize: give the source sprite, or use --auto COLOURS")

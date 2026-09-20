@@ -179,3 +179,37 @@ syntax error of mine. Both cost time, neither cost quota.
 0.96, 3/4 0.73, side 0.67, and the skeleton front only 0.62, because its shield makes the outline
 lopsided. It separates a symmetric subject from an asymmetric one but misreads a front-facing subject
 carrying an asymmetric item. Treat it as a hint (open defect 16).
+
+## Follow-up 4: the correction was too harsh; what fixed it
+
+Feedback on the first boar turntable: missing outlines, the front view's eye glints gone, and the pink
+snout chopped off. Diagnosis and fixes, in the order they were found:
+
+1. **Plain majority vote per cell** loses whatever is thin or small: a 1-texel outline is often under
+   half its cell, a glint is outvoted by the pupil, a rare colour by its neighbour. Fix: rarity-weighted
+   voting (`--preserve`, weight = share^-gamma, darkest colour boosted again), default 0.5 here.
+2. **The palette never contained the colours.** Reweighting cannot restore a colour that is not in the
+   palette. Median cut averaged the salmon snout (240,128,120) with dark nostril and outline pixels and
+   returned a dusty blend (193,132,130) that is in no pixel; the 3/4 anchor also barely showed the snout.
+   Fix: palette from the most common *exact* colours (histogram modes, then refined to the mean of the
+   pixels within a small radius), and from the union of all views (`--palette-also`).
+3. **Near-duplicate palette entries** (three near-blacks) split the outline between them. Merge palette
+   colours that are practically the same colour (distance 13; 26 was too aggressive and collapsed 24
+   colours to 12, flattening the shading).
+4. **A measure that would have caught all of it:** per palette colour, its share of the figure in the
+   corrected sprite over its share in the raw image (`representation`). At plain majority it flags the
+   specular white and the outline near-blacks at 0-54%. `--sweep` lists the cells where a rare colour
+   covered a fair fraction of the raw cell but the sprite shows something else, which is the comparison
+   sweep an agent reviews. `--restore FRAC --restore-colours ...` restores chosen accents; `--patch` applies
+   hand touch-ups from a JSON list.
+5. **Two regressions I introduced on the way, both caught by looking at the frames, not by the measure:**
+   pale specks along the silhouette (the anti-aliased fringe snapped to the now-correct white and, with
+   rare colours boosted, won edge cells; fixed by treating near-white pixels touching the background as
+   background, which is only safe while texels are much wider than the 3 px band), and an edge guard on
+   the restore step that turned out not to be the cause.
+
+**Where it stands:** pink snouts in every view, purple ears, unbroken outlines, white tusks, clean
+silhouettes. Still short: the eye glints are present but smaller than the original (a 2x2-pixel raw glint
+straddles four cells at 30-40% each), and the outline colour keeps about 41% of its raw share, which is
+the unavoidable cost of drawing a 1-pixel line on a coarser grid. Palette 28 colours; sprites 46-48
+texels tall.
