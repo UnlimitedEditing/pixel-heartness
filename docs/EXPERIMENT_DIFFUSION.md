@@ -253,3 +253,28 @@ consistency at the cost of physics. Frames are aligned on the body axis, not the
 family on this skeleton; a subject whose handed item shares colours with its body needs a mask. The rear
 3/4 and its mirrors have ragged legs that come from the generation. One run per view, so variance is
 unknown. The mirrored half is a reconstruction, not something the model drew.
+
+## Follow-up 6: walk frames straight from `edit-qwen21`
+
+Run 2026-09-21. Question: can each frame of a walk cycle come directly from the edit model? Four
+prompts (contact, passing, contact on the other leg, passing) on the front sprite and four on the
+generated side view, one fixed seed (2024) across all frames to favour a steady identity, 10x inputs,
+`pixelize.py` against the skeleton's palette and scale, then `pixelanim/walkcheck.py`. Two of the eight
+generations returned nothing on the first try (no render hash, the intermittent failure seen before) and
+were re-run with the same seed.
+
+| set | result |
+|---|---|
+| front | four nearly identical standing poses. Consistent (colour distance 0.08-0.09 from the original, shield within 2%, identical size) but only 4-14% of texels differ between frames: the prompts changed almost nothing. Not a walk |
+| side | genuine walking poses with bent knees and swinging arms, but not one character: shield 6-36% smaller than the input, colour distance 0.16-0.39, widths 21-25 texels, frame 3 faces the other way with the shield moved in front of the belly, frames 1 and 4 near duplicates |
+
+**Reading:** a fixed seed makes the outputs nearly deterministic for a given input, which kills the
+variation on the front and does not prevent identity drift on the side. A cycle needs frames that are
+different in pose and identical in everything else, and independent generations give one or the other.
+Not measured: the side frames are not registered to each other, so their texel-by-texel difference
+(86-94%) says nothing.
+
+**Not tried:** chaining (each frame edited from the previous one), per-frame seeds, or feeding a pose
+reference. What would make this worth pursuing is using the generated legs, which are the good part
+(bent knees the one-bone rig cannot make), as part variants on the segmented rig and keeping the body from
+the consistent sprite, so only the leg region has to agree.

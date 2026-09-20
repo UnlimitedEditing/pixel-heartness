@@ -53,7 +53,7 @@ JSON; relative paths (`source`, `parts_file`, `anim_file`, `strip_file`) resolve
 
 | path | what |
 |---|---|
-| `pixelanim/` | segment, render, checks, sheet, riglib, rig.lua, retarget, rotscan, bvh, pixelize (incl. --auto for diffusion output), facing (symmetry hint), mirrorpatch (mirror without swapping handed items) |
+| `pixelanim/` | segment, render, checks, sheet, riglib, rig.lua, retarget, rotscan, bvh, pixelize (incl. --auto for diffusion output), facing (symmetry hint), mirrorpatch (mirror without swapping handed items), walkcheck (are generated frames one character?) |
 | `examples/skeleton_warrior/` | rig + source sprite: biped FK |
 | `examples/slime/`, `examples/wisp/` | squash/stretch and chain-lag subjects; `python examples/make_examples.py` regenerates them |
 | `docs/REFERENCE.md` | how the cut, gates, ground lock work |
