@@ -18,6 +18,9 @@ for p in r["parts"]:
     f = HERE / "views" / ("side_%s.png" % p["name"])
     if f.exists():
         p["variants"] = {"side": "views/side_%s.png" % p["name"]}
+    b = HERE / "views" / ("back_%s.png" % p["name"])
+    if b.exists():
+        p.setdefault("variants", {})["back"] = "views/back_%s.png" % p["name"]
 r["states"] = [{"name": "turn", "fps": 8, "loop": True, "min_distinct": 0.3,
                 "frames": [{"yaw": a} for a in range(0, 360, 15)]}]
 (HERE / "rig_turn.json").write_text(json.dumps(r, indent=2), encoding="utf-8")

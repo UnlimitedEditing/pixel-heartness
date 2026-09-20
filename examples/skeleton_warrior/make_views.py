@@ -47,6 +47,27 @@ def label(profile: np.ndarray):
     return lab, x0
 
 
+def make_back_head(out_dir):
+    """The head's back view, from edit-krea2 run on the front (see EXPERIMENT_DIFFUSION.md).
+
+    The edit result is the raw pixelized image, aligned to the source exactly like the front
+    crop (offset 1,1), with the character's lateral layout NOT yet swapped. It is stored raw
+    because the `back` view is mirrored about the body axis at render time, which does the
+    swap. Only the skull rows are kept: a skeleton's ribcage from behind is close enough to
+    the flipped front, and the head is the giveaway.
+    """
+    f = ROOT / "data/diffusion/back_s0.8.png"
+    if not f.exists():
+        print("no back_head source (data/diffusion/back_s0.8.png); skipping")
+        return
+    crop = np.array(Image.open(f).convert("RGBA"))
+    img = np.zeros((46, 32, 4), dtype=np.uint8)
+    rows = 9                                  # cell rows 3-11 = crop rows 0-8
+    img[1:1 + rows, 1:1 + crop.shape[1]] = crop[:rows]
+    Image.fromarray(img, "RGBA").save(out_dir / "back_head.png")
+    print("back_head    %3d texels (edit-krea2, strength 0.8)" % int((img[:, :, 3] > 127).sum()))
+
+
 def main():
     src = np.array(Image.open(ROOT / "data/diffusion/view_2.png").convert("RGBA"))
     op = src[:, :, 3] > 127
@@ -67,6 +88,7 @@ def main():
                         n += 1
         Image.fromarray(img, "RGBA").save(out_dir / ("side_%s.png" % name))
         print("%-11s %3d texels" % (name, n))
+    make_back_head(out_dir)
     unlabelled = int((op & (lab == "")).sum())
     print("profile texels not covered by any box:", unlabelled)
 

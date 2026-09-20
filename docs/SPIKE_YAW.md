@@ -73,3 +73,15 @@ taught the difference, the Lua mirror for `agree`, and a `yaw` state that doesn'
 where the back is not seen); a 3/4 view (infer from front + profile, or accept the pop); the second
 leg (the profile shows one, so `leg_l` has no art at 90 degrees); rotation of profile parts under
 animation has not been tried; run-to-run variance of the diffusion profile is unknown.
+
+## Update: the back view, head only, from edit-krea2
+
+`riglib.DEFAULT_VIEWS` now lists a `back_art` view (variant `back`, mirrored) ahead of the plain
+`back` (the flipped front), so a part with back art uses it and every other part keeps the flipped
+front. `make_views.py` builds `views/back_head.png` from the edit-krea2 result at strength 0.8.
+The variant is stored raw (lateral layout unswapped) because the mirrored `back` view swaps it.
+
+**Result (yaw 135-225):** the skull is a blank cranium, no face. The body is unchanged and still
+weak: the chest is a dark mass and the shield is drawn over the torso with a smeared emblem
+(underlap fill; up to ~29% of a frame's visible texels are invented). One of the three tells of
+a fake back is fixed.

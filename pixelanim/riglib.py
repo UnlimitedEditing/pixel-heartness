@@ -184,7 +184,8 @@ def squash_matrix(amount: float, base) -> np.ndarray:
 DEFAULT_VIEWS = [
     {"name": "front", "angle": 0, "variant": None, "mirror": False},
     {"name": "side", "angle": 90, "variant": "side", "mirror": False},
-    {"name": "back", "angle": 180, "variant": None, "mirror": True},
+    {"name": "back_art", "angle": 180, "variant": "back", "mirror": True},   # authored/edited, if the part has it
+    {"name": "back", "angle": 180, "variant": None, "mirror": True},         # else the flipped front
     {"name": "side_l", "angle": 270, "variant": "side", "mirror": True},
 ]
 
