@@ -82,3 +82,29 @@ is how to measure it.
 2. Feed a corrected profile in as a part **variant** and drive it from `yaw`. Requires per-part
    segmentation of the profile, which is the same problem as segmenting the front.
 3. Infer 3/4 from front + profile: not started.
+
+## Follow-up: `edit-krea2` to rotate the subject 180 degrees
+
+Run 2026-09-20. `edit-krea2` (Krea2 with an unofficial instruction-editing patch, ~34 s per run,
+`/strength` 0.01-1.0: lower follows the instruction harder, higher keeps identity). Same 10x input.
+Prompt: rotate the character 180 degrees to show the skeleton from directly behind, back of the
+skull and spine and shield strapped to the back, same pixel art style, white background.
+Strengths 0.3, 0.55 and 0.8, one run each.
+
+| strength | what it did |
+|---|---|
+| 0.3 | blank cranium; a red strap across the ribs; the shield's dark interior with a grip; noisiest pixels, a few off-palette colours before snapping |
+| 0.55 | blank cranium with a stray black band left over from the eye sockets; shield face still shown |
+| 0.8 | cleanest blank cranium and neck; shield and ribs still front-facing |
+
+**What it fixed:** the head. Every strength gives a cranium with no eye sockets, which is what
+`stage-3d`'s "back" (a mirrored front, face showing) failed to do.
+
+**What it did not do:** swap the lateral layout (the shield stays on the viewer's left where a back
+view needs it on the right; a horizontal flip fixes that deterministically), or redraw the torso
+as a spine (the ribcage stays a front ribcage). A skeleton's ribcage from behind is close to the
+front, so that matters less than it would for another subject.
+
+**How it was used:** per part. Only the head takes edit-krea2's result; every other part keeps the
+flipped front, via the `back_art` view in the yaw spike (`docs/SPIKE_YAW.md`, branch
+`spike-yaw`). One run per strength, so run-to-run variance is again unknown.
