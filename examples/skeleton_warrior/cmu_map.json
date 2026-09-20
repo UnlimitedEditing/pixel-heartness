@@ -1,0 +1,11 @@
+{
+  "_note": "skeleton_warrior part -> CMU BVH joints (bone runs from the first to the second). 'A+B' extends A by A-B. Used with --mirror: the sprite's weapon arm is on the viewer's right.",
+  "pelvis": ["Hips", "LowerBack"],
+  "torso": ["LowerBack", "Neck"],
+  "head": ["Neck", "Head.end"],
+  "arm_weapon": ["RightArm", "RightHand"],
+  "arm_shield": ["LeftArm", "LeftHand"],
+  "shield": ["LeftHand", "LeftHand+LeftForeArm"],
+  "leg_r": ["RightUpLeg", "RightFoot"],
+  "leg_l": ["LeftUpLeg", "LeftFoot"]
+}

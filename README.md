@@ -53,11 +53,12 @@ JSON; relative paths (`source`, `parts_file`, `anim_file`, `strip_file`) resolve
 
 | path | what |
 |---|---|
-| `pixelanim/` | segment, render, checks, sheet, riglib, rig.lua, retarget, rotscan |
+| `pixelanim/` | segment, render, checks, sheet, riglib, rig.lua, retarget, rotscan, bvh |
 | `examples/skeleton_warrior/` | rig + source sprite: biped FK |
 | `examples/slime/`, `examples/wisp/` | squash/stretch and chain-lag subjects; `python examples/make_examples.py` regenerates them |
 | `docs/REFERENCE.md` | how the cut, gates, ground lock work |
 | `docs/DEFECTS.md` | **open defects, the deferred-work backlog**, and the log of every defect class |
+| `docs/EXPERIMENT_CMU.md` | the real-mocap experiment: method, numbers, verdict |
 | `docs/HANDOFF.md` | history, evidence for the thesis, roadmap |
 
 ## Origin
