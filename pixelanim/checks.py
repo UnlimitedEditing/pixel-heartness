@@ -249,11 +249,22 @@ def gate_synth(rig, parts, frames, args):
 
 
 def gate_agree(rig, parts, frames, args):
-    """Python render.py and Aseprite rig.lua must produce the same strip. They
-    implement the same maths twice; this is the only thing keeping them honest."""
-    strip = rig.path_of("strip_file")
+    """Python render.py and Aseprite rig.lua must produce the same frames. They
+    implement the same maths twice; this is the only thing keeping them honest.
+
+    Compares the frames just rendered in memory against rig.lua's own strip
+    (`ase_strip_path`), alpha and colour. Those are different files by
+    construction: when both renderers wrote `strip_file` this gate compared a
+    file with itself and passed whatever rig.lua did. A strip older than the rig
+    file or the parts manifest is stale and fails, since it cannot say anything
+    about the current rig.
+    """
+    strip = rig.ase_strip_path()
     if not strip.is_file():
-        return True, ["no Aseprite strip at %s -- skipped" % strip]
+        return True, ["SKIPPED: no Aseprite strip at %s (run rig.lua mode=build)" % strip]
+    newest = max(rig.path.stat().st_mtime, (rig.parts_dir() / "manifest.json").stat().st_mtime)
+    if strip.stat().st_mtime < newest:
+        return False, ["Aseprite strip %s is older than the rig or parts -- rebuild it" % strip.name]
     CW, CH = rig.cell
     im = np.array(Image.open(strip).convert("RGBA"))
     if im.shape[0] != CH or im.shape[1] != CW * len(frames):
@@ -262,10 +273,13 @@ def gate_agree(rig, parts, frames, args):
     bad = []
     for i, fr in enumerate(frames):
         cell = im[:, i * CW:(i + 1) * CW]
-        d = int(((cell[:, :, 3] > riglib.ALPHA_CUT) ^ alpha(fr)).sum())
-        if d:
-            bad.append("frame %2d differs in %d texels" % (i, d))
-    return not bad, bad[:10] or ["%d frames match the Aseprite build" % len(frames)]
+        a_ase, a_py = cell[:, :, 3] > riglib.ALPHA_CUT, alpha(fr)
+        shape = int((a_ase ^ a_py).sum())
+        both = a_ase & a_py
+        colour = int((cell[:, :, :3][both] != fr["rgba"][:, :, :3][both]).any(axis=1).sum())
+        if shape or colour:
+            bad.append("frame %2d: %d texels differ in shape, %d in colour" % (i, shape, colour))
+    return not bad, bad[:10] or ["%d frames match the Aseprite build, shape and colour" % len(frames)]
 
 
 GATES = [("rest", gate_rest), ("palette", gate_palette), ("holes", gate_holes),

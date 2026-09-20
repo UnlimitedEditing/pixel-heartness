@@ -28,7 +28,7 @@ class Rig:
     def __init__(self, data: dict, path: Path):
         self.path = path
         self.data = data
-        for key in ("source", "parts_file", "anim_file", "strip_file", "parts_dir"):
+        for key in ("source", "parts_file", "anim_file", "strip_file", "ase_strip_file", "parts_dir"):
             if key in data and not Path(data[key]).is_absolute():
                 data[key] = (path.resolve().parent / data[key]).as_posix()
         self.cell = (int(data["cell"][0]), int(data["cell"][1]))
@@ -47,6 +47,15 @@ class Rig:
 
     def path_of(self, key: str) -> Path:
         return Path(self.data[key])
+
+    def ase_strip_path(self) -> Path:
+        """Where rig.lua writes its strip. Deliberately not `strip_file`: that is
+        render.py's output, and if both wrote it the `agree` gate would compare a
+        file with itself."""
+        if "ase_strip_file" in self.data:
+            return Path(self.data["ase_strip_file"])
+        s = self.path_of("strip_file")
+        return s.with_name(s.stem + "_ase" + s.suffix)
 
     def parts_dir(self) -> Path:
         """Where segment.py writes its output. Defaults beside the parts file."""

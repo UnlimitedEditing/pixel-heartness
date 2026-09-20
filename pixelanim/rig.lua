@@ -16,10 +16,13 @@ f:close()
 
 -- relative paths in the rig file are relative to the rig file, as in riglib.py
 local rigDir = rigPath:gsub("\\", "/"):match("^(.*)/[^/]*$") or "."
-for _, key in ipairs({"source", "parts_file", "anim_file", "strip_file", "parts_dir"}) do
+for _, key in ipairs({"source", "parts_file", "anim_file", "strip_file", "ase_strip_file", "parts_dir"}) do
   local v = rig[key]
   if v and not (v:match("^%a:[/" .. string.char(92) .. "]") or v:sub(1, 1) == "/") then rig[key] = rigDir .. "/" .. v end
 end
+
+-- rig.lua's own strip; never strip_file, which render.py owns (see checks.py agree)
+local aseStrip = rig.ase_strip_file or rig.strip_file:gsub("%.png$", "_ase.png")
 
 local CW, CH = rig.cell[1], rig.cell[2]
 
@@ -377,14 +380,14 @@ out:saveAs(rig.anim_file)
 app.command.ExportSpriteSheet{
   ui = false,
   type = SpriteSheetType.HORIZONTAL,
-  textureFilename = rig.strip_file,
-  dataFilename = rig.strip_file:gsub("%.png$", ".json"),
+  textureFilename = aseStrip,
+  dataFilename = aseStrip:gsub("%.png$", ".json"),
   dataFormat = SpriteSheetDataFormat.JSON_ARRAY,
   listTags = true,
   trim = false,
 }
 
-print(string.format("built %d frames across %d states -> %s", #frames, #tags, rig.strip_file))
+print(string.format("built %d frames across %d states -> %s", #frames, #tags, aseStrip))
 for _, t in ipairs(tags) do
   print(string.format("  %-10s frames %d-%d", t.name, t.from, t.to))
 end

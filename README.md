@@ -43,7 +43,7 @@ python pixelanim/checks.py $RIG --only agree
 ```
 
 Re-run `import` after every `segment.py`. Layers named `+...` survive rebuilds.
-Note: `render.py` and `rig.lua` both write `strip_file`, so the `agree` gate is only meaningful when the strip on disk came from Aseprite (it is skipped if no strip exists).
+`rig.lua` writes its own `<name>_strip_ase.png` (override with `ase_strip_file`); `strip_file` is `render.py`'s output, which is what an engine packer should read. `agree` compares a fresh in-memory render against the Aseprite strip, shape and colour. It reports SKIPPED when there is no Aseprite strip and fails if that strip is older than the rig or parts.
 
 ## Rig files
 

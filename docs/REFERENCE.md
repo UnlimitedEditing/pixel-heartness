@@ -139,7 +139,7 @@ Exit status is the number of failures. Run after every rig change.
 | `ground` | every frame's lowest texel is on row `CH-2` |
 | `distinct` | consecutive keys differ enough as a black shape, **including the loop wrap** |
 | `synth` | reports how much of each frame the viewer sees that was invented |
-| `agree` | `render.py` and `rig.lua` produce the same strip |
+| `agree` | a fresh `render.py` render matches `rig.lua`'s separate strip (`*_strip_ase.png`) in shape and colour; SKIPPED if absent, fails if stale |
 
 `distinct` takes its bar per state (`states[].min_distinct`, default 2%), because the
 requirement is not one number: an idle is deliberately low-amplitude, while an attack must
