@@ -348,7 +348,7 @@ def main():
     ap.add_argument("--palette-also", type=Path, action="append", default=[], metavar="IMAGE",
                     help="with --palette-from: further views to derive the shared palette from")
     ap.add_argument("--preserve", type=float, default=0.0, metavar="GAMMA",
-                    help="with --auto: rarity-weighted voting (0 = plain majority; ~0.4 restores thin "
+                    help="rarity-weighted voting (0 = plain majority; ~0.4 restores thin "
                          "outlines, small highlights and rare accents)")
     ap.add_argument("--height", type=int, default=None, metavar="TEXELS",
                     help="with --auto: force the sprite to this many texels tall, whatever the image's "
@@ -417,7 +417,7 @@ def main():
         src = Image.open(args.source)
         ref = Image.open(args.texel_from or args.image)
         t = texel_size(ref, src)
-        sprite = pixelize(Image.open(args.image), src, t)
+        sprite = pixelize(Image.open(args.image), src, t, preserve=args.preserve)
     print("texel estimate %.2f px -> refined %.2f px, result %dx%d"
           % (t, pixelize.last_texel, sprite.width, sprite.height))
     if args.out:

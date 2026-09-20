@@ -213,3 +213,43 @@ silhouettes. Still short: the eye glints are present but smaller than the origin
 straddles four cells at 30-40% each), and the outline colour keeps about 41% of its raw share, which is
 the unavoidable cost of drawing a 1-pixel line on a coarser grid. Palette 28 colours; sprites 46-48
 texels tall.
+
+## Follow-up 5: the skeleton ring, and the mirror problem
+
+Run 2026-09-21. `edit-qwen21` from the skeleton front (10x input), one run per view, seeds 1101-1104
+and 6404, corrected with `pixelize.py` against the skeleton's real 14-colour palette at the known
+scale (`--preserve 0.4`).
+
+| view | what came back |
+|---|---|
+| 3/4 | skull turned with a dark socket and cheek; shield left, glove right |
+| side | a real profile: jaw, thin ribs, shield narrowed; shield left, glove right |
+| rear 3/4 | skull turned away; **shield still on the left**, ragged legs |
+| rear | a true back: blank cranium, spine, ribs, pelvis, both legs; **shield on the viewer's right showing its plain back, glove on the left** |
+
+Two failures worth knowing: the first rear generation returned nothing (no render hash, cause unknown; a
+fresh seed worked, and the queue had a stalled job in it), and the direct rear is the *only* view where
+the model moved the shield across the body, which is physically right and inconsistent with its own rear
+3/4.
+
+**The mirror problem, and the patch.** A plain mirror of any view moves the shield to the wrong side.
+`pixelanim/mirrorpatch.py`:
+- `mirror_patched`: lift the handed items off (pixels in the shield's colour family plus a 1-texel ring),
+  mirror everything else about the body axis (found by symmetry with the handed items excluded, so the
+  shield cannot pull the axis off the body), put the items back unmirrored;
+- `flip_handed`: the inverse, for a view that has the right body and the wrong side for the shield
+  (the rear 3/4): body untouched, handed items moved across the axis.
+
+Two bugs on the way, both visible only by looking: parts hidden behind the shield in the original
+(the far leg) do not exist to be mirrored, leaving disconnected fragments; filling every empty
+position fixed that and produced a two-faced skull (the unmirrored skull drawn over the mirrored one),
+so the fill is limited to the mirrored shadow of the handed items.
+
+**The ring.** Physically the shield should travel left, centre (90), right (135-225), centre (270), left:
+`skel_turn_physical.gif`. `skel_turn_allleft.gif` keeps it on the left in every frame, for identity
+consistency at the cost of physics. Frames are aligned on the body axis, not the bounding box.
+
+**Limits:** colour-family detection of handed items works because only the shield and glove use the red
+family on this skeleton; a subject whose handed item shares colours with its body needs a mask. The rear
+3/4 and its mirrors have ragged legs that come from the generation. One run per view, so variance is
+unknown. The mirrored half is a reconstruction, not something the model drew.
