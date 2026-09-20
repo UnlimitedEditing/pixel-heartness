@@ -70,8 +70,9 @@ for the new poses):
 **Against the hand-written strike.** Hand-written weapon arm: -20, +34, +44 degrees, a sweep
 *across* the sprite plane. Mocap weapon arm: -72 to -110 for the raise, then back to -28, and it
 never reaches +34/+44, because the real downswing goes toward the camera. The hand-written strike
-is a stylised in-plane substitute, not an approximation of the mocap. That is the answer to the
-question: fidelity to real motion was never what made it read.
+is a stylised in-plane substitute, not an approximation of the mocap. On this evidence the
+hand-written strike reads because it is a good in-plane invention, not because it tracks a real
+motion; that is an inference from one clip, not something measured.
 
 ## What it is good for
 
@@ -88,8 +89,8 @@ question: fidelity to real motion was never what made it read.
   from the side and may retarget well.
 - The retargeted keys were reduced to 5; the hand-written strike has 3 plus separate windup,
   ready and recover states. Not a like-for-like frame budget.
-- The fit still invents small motions from keypoint jitter (OPEN #7). Two of the four upper-body
-  states show it.
+- The fit can still invent small motions from keypoint jitter (OPEN #7). Not separately measured
+  on this clip; the `holes` failure in `upper_auto` frame 25 may be that or may be the pose itself.
 
 ## What would change the verdict
 
