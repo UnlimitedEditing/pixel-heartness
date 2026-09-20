@@ -1,0 +1,216 @@
+{
+ "name": "view_v90",
+ "source": "reg_v90.png",
+ "parts_file": "out/_v.aseprite",
+ "anim_file": "out/_v_anim.aseprite",
+ "strip_file": "out/_v.png",
+ "cell": [
+  48,
+  48
+ ],
+ "underlap": 0,
+ "symmetry_x": 24.5,
+ "parts": [
+  {
+   "name": "leg_r",
+   "rect": [
+    27,
+    30,
+    10,
+    18
+   ],
+   "pivot": [
+    31,
+    31
+   ],
+   "parent": "pelvis",
+   "seeds": [
+    [
+     27,
+     36
+    ],
+    [
+     27,
+     42
+    ]
+   ]
+  },
+  {
+   "name": "leg_l",
+   "rect": [
+    17,
+    30,
+    9,
+    18
+   ],
+   "pivot": [
+    23,
+    31
+   ],
+   "parent": "pelvis",
+   "seeds": [
+    [
+     20,
+     36
+    ],
+    [
+     23,
+     43
+    ]
+   ]
+  },
+  {
+   "name": "pelvis",
+   "rect": [
+    22,
+    24,
+    11,
+    8
+   ],
+   "pivot": [
+    27,
+    28
+   ],
+   "parent": null,
+   "seeds": [
+    [
+     24,
+     29
+    ],
+    [
+     24,
+     31
+    ]
+   ]
+  },
+  {
+   "name": "torso",
+   "rect": [
+    20,
+    13,
+    13,
+    12
+   ],
+   "pivot": [
+    27,
+    26
+   ],
+   "parent": "pelvis",
+   "seeds": [
+    [
+     25,
+     18
+    ],
+    [
+     24,
+     21
+    ]
+   ]
+  },
+  {
+   "name": "head",
+   "rect": [
+    18,
+    1,
+    15,
+    14
+   ],
+   "pivot": [
+    25,
+    15
+   ],
+   "parent": "torso",
+   "seeds": [
+    [
+     24,
+     7
+    ],
+    [
+     24,
+     10
+    ]
+   ]
+  },
+  {
+   "name": "arm_weapon",
+   "rect": [
+    29,
+    21,
+    11,
+    13
+   ],
+   "pivot": [
+    32,
+    23
+   ],
+   "parent": "torso",
+   "seeds": [
+    [
+     29,
+     29
+    ],
+    [
+     29,
+     22
+    ]
+   ]
+  },
+  {
+   "name": "arm_shield",
+   "rect": [
+    17,
+    16,
+    8,
+    8
+   ],
+   "pivot": [
+    22,
+    20
+   ],
+   "parent": "torso",
+   "seeds": [
+    [
+     20,
+     22
+    ]
+   ]
+  },
+  {
+   "name": "shield",
+   "rect": [
+    9,
+    19,
+    20,
+    22
+   ],
+   "pivot": [
+    20,
+    24
+   ],
+   "parent": "arm_shield",
+   "seeds": [
+    [
+     17,
+     29
+    ],
+    [
+     14,
+     29
+    ],
+    [
+     20,
+     29
+    ],
+    [
+     17,
+     38
+    ],
+    [
+     17,
+     21
+    ]
+   ]
+  }
+ ],
+ "states": []
+}
