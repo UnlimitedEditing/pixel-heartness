@@ -26,6 +26,8 @@ The thesis this tests: *eyes scale with the number of primitives, not the number
 | 14 | Diffusion turnaround views come back at different pixel scales and each derives its own palette | the models do not preserve pixel size | `pixelize.py --height` and `--palette-from` (done); rare accent colours are still partly lost (boar snout stays paler than the original pink) |
 | 15 | Inputs are a mix of front-facing and already-3/4 subjects, and the pipeline assumes a front view | generated entities vary | a facing classifier (silhouette mirror symmetry) that picks the anchor view; not built |
 
+| 16 | `facing.py` (silhouette mirror symmetry) misreads a front-facing subject that carries an asymmetric item: the skeleton front scores 0.62, below the boar's 3/4 (0.73). Front and rear boar score 0.97 and 0.96, side 0.67 | the shield makes the outline lopsided | an interior signal (face features) or a symmetry score with the asymmetric parts masked out; until then treat it as a hint, not a decision, and let the agent look at the image |
+
 ## Backlog (deliberately not done, from the handoff)
 
 Ordered as the handoff ordered them; item numbers are its section numbers.
