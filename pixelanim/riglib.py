@@ -74,10 +74,106 @@ class Rig:
             cur = self.by_name[cur].get("parent")
 
     def frames(self):
-        """Flatten states into (state_name, frame_index_in_state, pose, hold, fps)."""
+        """Flatten states into (state_name, frame_index_in_state, pose, hold, fps).
+
+        `pose` is the *resolved* pose -- authored values plus whatever `lag`
+        adds -- because that is what actually moves, and what segment.py must
+        size its underlap against."""
         for st in self.states:
+            res = resolve_state(self, st)
             for i, fr in enumerate(st["frames"]):
-                yield st["name"], i, fr.get("pose", {}), int(fr.get("hold", 1)), float(st.get("fps", 8))
+                yield st["name"], i, res[i]["pose"], int(fr.get("hold", 1)), float(st.get("fps", 8))
+
+    def squash_base(self):
+        """Where squash/stretch pivots: the floor line under the root, by default."""
+        if "squash_base" in self.data:
+            b = self.data["squash_base"]
+            return float(b[0]), float(b[1])
+        root = next((p for p in self.parts if not p.get("parent")), self.parts[0])
+        return float(self.data.get("symmetry_x", root["pivot"][0])), float(self.cell[1] - 1)
+
+
+MAX_LAG = 0.95
+
+
+def resolve_state(rig: Rig, state: dict) -> list[dict]:
+    """Turn a state's authored frames into what is rendered: a list of
+    `{"pose": {part: {...}}, "squash": float}`.
+
+    **Lag** (`parts[].lag`, 0..0.95) is follow-through. A lagged part's angle in
+    the world trails its parent's: with `pw` the parent's world rotation and `L`
+    the lagged copy of it, each frame does `L <- pw - lag*(pw - L_prev)` and the
+    part gets an extra local `rot` of `L - pw`, so a driver that swings out
+    leaves the part behind and it catches up on the frames after. `lag` 0 is
+    rigid FK, which is what a part without the field gets. One step per key
+    frame regardless of `hold`: a held frame renders the pose at the *start* of
+    the hold, and the catch-up happens during it. Only `rot` is lagged; scale
+    and translation are not, and the parent's rotation is summed along the chain
+    rather than composed, which is exact for the small angles this is for.
+
+    A looping state is run round three times so its first frame starts from the
+    steady-state lag instead of from rest. A non-looping state starts unlagged,
+    since nothing is known about what came before it.
+
+    **Squash** is passed through untouched; it is applied as one global matrix
+    in `render.py` / `rig.lua`, not resolved per part.
+    """
+    frames = state["frames"]
+    lagged = {p["name"]: min(MAX_LAG, max(0.0, float(p.get("lag", 0.0))))
+              for p in rig.parts if p.get("lag")}
+
+    def parent_world_rot(name, eff):
+        total, cur = 0.0, rig.by_name[name].get("parent")
+        while cur:
+            total += eff[cur]
+            cur = rig.by_name[cur].get("parent")
+        return total
+
+    fk, seen = [], set()
+    def visit(n):
+        if n in seen:
+            return
+        seen.add(n)
+        if rig.by_name[n].get("parent"):
+            visit(rig.by_name[n]["parent"])
+        fk.append(n)
+    for p in rig.parts:
+        visit(p["name"])
+
+    passes = 3 if (state.get("loop", True) and lagged) else 1
+    L = {n: None for n in lagged}
+    resolved = []
+    for _ in range(passes):
+        resolved = []
+        for fr in frames:
+            pose = {n: dict(v) for n, v in fr.get("pose", {}).items()}
+            eff = {}
+            for n in fk:                      # parents before children
+                own = float(pose.get(n, {}).get("rot", 0.0))
+                if n in lagged:
+                    pw = parent_world_rot(n, eff)
+                    if L[n] is None:
+                        L[n] = pw             # unlagged on the very first frame
+                    L[n] = pw - lagged[n] * (pw - L[n])
+                    extra = L[n] - pw
+                    if extra:
+                        pose.setdefault(n, {})["rot"] = own + extra
+                    own += extra
+                eff[n] = own
+            resolved.append(dict(pose=pose, squash=float(fr.get("squash", 0.0))))
+    return resolved
+
+
+def squash_matrix(amount: float, base) -> np.ndarray:
+    """Volume-preserving squash (amount > 0) or stretch (amount < 0) about the
+    point `base`: y scales by `1 - amount`, x by its reciprocal, so the area a
+    shape covers is unchanged. Applied to every part after FK."""
+    sy = 1.0 - float(amount)
+    sx = 1.0 / sy
+    bx, by = float(base[0]), float(base[1])
+    return np.array([[sx, 0.0, bx - sx * bx],
+                     [0.0, sy, by - sy * by],
+                     [0.0, 0.0, 1.0]])
 
 
 def load_rig(path) -> Rig:

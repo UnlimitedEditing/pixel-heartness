@@ -248,6 +248,76 @@ def gate_synth(rig, parts, frames, args):
     return True, lines or ["worst frame is %.1f%% invented texels" % worst]
 
 
+def gate_volume(rig, parts, frames, args):
+    """Squash and stretch must conserve volume. The matrix does by construction
+    (sx = 1/sy); nearest-neighbour sampling then drops or duplicates whole rows
+    and columns, and at ~14 texels tall one lost row is 7% of the body. Compares
+    each squashed frame against the same pose with squash off, so limb swings
+    and lag do not count against it."""
+    tol = float(rig.data.get("volume_tol", 0.15))
+    bad, worst, n = [], 0.0, 0
+    for i, fr in enumerate(frames):
+        if not fr.get("squash"):
+            continue
+        n += 1
+        flat, _, _ = render.compose(rig, parts, fr["pose"])
+        before = int((flat[:, :, 3] > riglib.ALPHA_CUT).sum())
+        after = int(alpha(fr).sum())
+        drift = abs(after - before) / max(1, before)
+        worst = max(worst, drift)
+        if drift > tol:
+            bad.append("frame %2d %-8s squash %+.2f: %d -> %d texels (%.0f%%, limit %.0f%%)"
+                       % (i, fr["state"], fr["squash"], before, after, 100 * drift, 100 * tol))
+    if not n:
+        return True, ["no squashed frames"]
+    return not bad, bad or ["%d squashed frames, worst volume drift %.1f%% (limit %.0f%%)"
+                            % (n, 100 * worst, 100 * tol)]
+
+
+def gate_lag(rig, parts, frames, args):
+    """Lag must be visible and bounded.
+
+    Visible: how far the part's far tip sits from where rigid FK would put it,
+    in texels. Measured at the tip through the whole chain, not from the part's
+    own extra rotation -- lag cascades, each link trailing an already-smoothed
+    parent, so a deep link's *local* extra is tiny while everything above it has
+    bent and the tip still swings clear. A `lag` that never moves its tip by
+    ~a texel is dead config that reads as if it worked.
+
+    Bounded: the extra rotation lag adds at any one joint stays under
+    `lag_max_deg` (default 25), or the part whips instead of trailing.
+    """
+    import math
+    cap = float(rig.data.get("lag_max_deg", 25.0))
+    lagged = [p for p in rig.parts if p.get("lag")]
+    if not lagged:
+        return True, ["no lagged parts"]
+    bad, ok = [], []
+    for p in lagged:
+        n = p["name"]
+        ys, xs = np.where(parts.layer[n][:, :, 3] > riglib.ALPHA_CUT)
+        px, py = p["pivot"]
+        far = int(np.argmax(np.hypot(xs + 0.5 - px, ys + 0.5 - py)))
+        tip = np.array([xs[far] + 0.5, ys[far] + 0.5, 1.0])
+        peak_deg, peak_tip = 0.0, 0.0
+        for st in rig.states:
+            for fr, rs in zip(st["frames"], riglib.resolve_state(rig, st)):
+                own = float(fr.get("pose", {}).get(n, {}).get("rot", 0.0))
+                peak_deg = max(peak_deg, abs(float(rs["pose"].get(n, {}).get("rot", 0.0)) - own))
+                a = riglib.world_matrix(rig, n, rs["pose"], {}) @ tip
+                b = riglib.world_matrix(rig, n, fr.get("pose", {}), {}) @ tip
+                peak_tip = max(peak_tip, float(np.hypot(*(a[:2] - b[:2]))))
+        if peak_deg > cap:
+            bad.append("%s: lag adds up to %.1f deg at its joint, cap is %.0f (lower `lag` or raise lag_max_deg)"
+                       % (n, peak_deg, cap))
+        elif peak_tip < 0.75:
+            bad.append("%s: lag %.2f moves its tip at most %.2f texel from rigid FK -- invisible; "
+                       "raise it or drop the field" % (n, p["lag"], peak_tip))
+        else:
+            ok.append("%s %.1f texel (%.1f deg at joint)" % (n, peak_tip, peak_deg))
+    return not bad, bad or ["tip offset from rigid FK: " + ", ".join(ok)]
+
+
 def gate_agree(rig, parts, frames, args):
     """Python render.py and Aseprite rig.lua must produce the same frames. They
     implement the same maths twice; this is the only thing keeping them honest.
@@ -284,7 +354,8 @@ def gate_agree(rig, parts, frames, args):
 
 GATES = [("rest", gate_rest), ("palette", gate_palette), ("holes", gate_holes),
          ("floaters", gate_floaters), ("border", gate_border), ("wholetexel", gate_wholetexel), ("ground", gate_ground),
-         ("distinct", gate_distinct), ("synth", gate_synth), ("agree", gate_agree)]
+         ("distinct", gate_distinct), ("synth", gate_synth), ("volume", gate_volume),
+         ("lag", gate_lag), ("agree", gate_agree)]
 
 
 def run(rig_path, args):

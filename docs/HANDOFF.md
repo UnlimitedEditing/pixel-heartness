@@ -148,7 +148,7 @@ once the artefact had a name.
 1. **DONE 2026-09-20 (third session):** ~~Seed validation~~ in `segment.py` (above). Cheap, and it closes the one failure mode
    that still needed a human. Pair it with a colour dump in `sheet.py`, since that is
    what actually caught the bad seeds.
-2. **The two missing primitives from §3** — squash/stretch about a base line, and lag down a
+2. **DONE 2026-09-20 (third session), see REFERENCE.md "Primitives beyond rigid FK":** **The two missing primitives from §3** — squash/stretch about a base line, and lag down a
    chain. Both are small, both unlock whole archetypes, and neither needs anything from the
    segmentation work.
 3. **Part variants** (§2's first deliverable) — cheaper now, because `segment.py` already

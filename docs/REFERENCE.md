@@ -139,12 +139,36 @@ Exit status is the number of failures. Run after every rig change.
 | `ground` | every frame's lowest texel is on row `CH-2` |
 | `distinct` | consecutive keys differ enough as a black shape, **including the loop wrap** |
 | `synth` | reports how much of each frame the viewer sees that was invented |
+| `volume` | a squashed frame covers within `volume_tol` (default 15%) of the same pose unsquashed |
+| `lag` | each lagged part's tip sits at least ~0.75 texel from rigid FK, and its joint never gets more than `lag_max_deg` (default 25) of extra rotation |
 | `agree` | a fresh `render.py` render matches `rig.lua`'s separate strip (`*_strip_ase.png`) in shape and colour; SKIPPED if absent, fails if stale |
 
 `distinct` takes its bar per state (`states[].min_distinct`, default 2%), because the
 requirement is not one number: an idle is deliberately low-amplitude, while an attack must
 show a readable commit point. `skeleton_warrior`'s idle sits at 1.6% against a 1.5% bar and
 every other state has 9% or more of margin.
+
+## Primitives beyond rigid FK
+
+**Squash / stretch.** `states[].frames[].squash`: positive flattens, negative stretches. One
+global matrix applied after FK to every part: y scales by `1 - s`, x by `1/(1 - s)`, so area is
+conserved, about `squash_base` (default: the floor line under the root's x). Ground lock runs
+after it, so a squashed frame still lands on the floor row. Airborne states are exempt as usual.
+Segmentation does not see squash when sizing underlap; it is a uniform scale about the floor
+and the drift it adds at a seam is small. `examples/slime` is the subject.
+
+**Chain lag.** `parts[].lag` (0..0.95) makes a part's world angle trail its parent's:
+`L <- pw - lag*(pw - L_prev)`, extra local `rot = L - pw`. It **cascades**, since each link
+trails an already-smoothed parent, so local extra rotation shrinks down the chain while the tip
+offset from rigid FK grows; the `lag` gate therefore measures at the tip. Only `rot` lags. One
+step per key frame regardless of `hold`. Looping states are settled over three passes;
+non-looping states start unlagged. Deep links need a high `lag` (~0.75 in the wisp) because each
+one only sees the previous link's damped motion. `examples/wisp` is the subject. **The driver must
+rotate a parent**: a `dx` swing of the root does not lag.
+
+**Small parts and rotation.** At ~12 texels, a head rotated 18-26 degrees comes out scrambled
+under nearest-neighbour sampling (eyes split, edge texels detach) and no gate says so. Keep
+rotation of small parts to about 8 degrees and let lag carry the motion elsewhere.
 
 ## Ground lock
 

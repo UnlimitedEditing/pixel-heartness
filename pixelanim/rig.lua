@@ -174,12 +174,80 @@ for _, p in ipairs(rig.parts) do
   synthOf[p.name] = m
 end
 
+-- Lag and squash. Mirrors riglib.resolve_state / squash_matrix, and must agree
+-- with them texel for texel (the `agree` gate). See the docstring there for why
+-- lag steps once per key frame and sums parent rotations rather than composing.
+local MAX_LAG = 0.95
+
+local fkOrder, fkSeen = {}, {}
+local function fkVisit(p)
+  if fkSeen[p.name] then return end
+  fkSeen[p.name] = true
+  if p.parent then fkVisit(partByName[p.parent]) end
+  fkOrder[#fkOrder + 1] = p
+end
+for _, p in ipairs(rig.parts) do fkVisit(p) end
+
+local hasLag = false
+for _, p in ipairs(rig.parts) do if p.lag and p.lag ~= 0 then hasLag = true end end
+
+local function resolveState(st)
+  local passes = (st.loop ~= false and hasLag) and 3 or 1
+  local L, resolved = {}, {}
+  for _ = 1, passes do
+    resolved = {}
+    for _, fr in ipairs(st.frames) do
+      local pose = {}
+      for n, v in pairs(fr.pose or {}) do
+        local c = {}
+        for k, x in pairs(v) do c[k] = x end
+        pose[n] = c
+      end
+      local eff = {}
+      for _, p in ipairs(fkOrder) do
+        local own = (pose[p.name] and pose[p.name].rot) or 0
+        if p.lag and p.lag ~= 0 then
+          local lag = math.min(MAX_LAG, math.max(0, p.lag))
+          local pw, cur = 0, p.parent
+          while cur do
+            pw = pw + eff[cur]
+            cur = partByName[cur].parent
+          end
+          if L[p.name] == nil then L[p.name] = pw end
+          L[p.name] = pw - lag * (pw - L[p.name])
+          local extra = L[p.name] - pw
+          if extra ~= 0 then
+            pose[p.name] = pose[p.name] or {}
+            pose[p.name].rot = own + extra
+          end
+          own = own + extra
+        end
+        eff[p.name] = own
+      end
+      resolved[#resolved + 1] = {pose = pose, squash = fr.squash or 0}
+    end
+  end
+  return resolved
+end
+
+local rootPart = rig.parts[1]
+for _, p in ipairs(rig.parts) do if not p.parent then rootPart = p break end end
+local squashBase = rig.squash_base or {rig.symmetry_x or rootPart.pivot[1], CH - 1}
+
+local function squashMatrix(amount)
+  if amount == 0 then return {1, 0, 0, 1, 0, 0} end
+  local sy = 1 - amount
+  local sx = 1 / sy
+  return {sx, 0, 0, sy, squashBase[1] - sx * squashBase[1], squashBase[2] - sy * squashBase[2]}
+end
+
 -- flatten states into a frame list
 local frames, tags = {}, {}
 for _, st in ipairs(rig.states) do
   local from = #frames + 1
-  for _, fr in ipairs(st.frames) do
-    frames[#frames + 1] = {pose = fr.pose or {}, state = st.name,
+  local res = resolveState(st)
+  for i, fr in ipairs(st.frames) do
+    frames[#frames + 1] = {pose = res[i].pose, squash = res[i].squash, state = st.name,
                            ms = math.floor(1000 / (st.fps or 8) * (fr.hold or 1))}
   end
   tags[#tags + 1] = {name = st.name, from = from, to = #frames, loop = st.loop ~= false}
@@ -194,9 +262,10 @@ out:deleteLayer(out.layers[1])
 -- they are applied inside the matrix (not by moving cels afterwards) so that
 -- clipping to the cell happens after the shift, exactly as render.py does it.
 local gdx, gdy = 0, 0
+local gsq = {1, 0, 0, 1, 0, 0} -- this frame's squash, applied after FK and before the shift
 local function renderPart(p, pose)
   local s = srcOf[p.name]
-  local m = mmul({1, 0, 0, 1, gdx, gdy}, worldMatrix(p, pose, {}))
+  local m = mmul({1, 0, 0, 1, gdx, gdy}, mmul(gsq, worldMatrix(p, pose, {})))
   local inv = minv(m)
   if not inv then return nil, 0, 0 end
 
@@ -341,6 +410,7 @@ end
 
 for i, fr in ipairs(frames) do
   gdx, gdy = 0, 0
+  gsq = squashMatrix(fr.squash)
   if groundLock and not airborne[fr.state] then
     local low = lowestRow(fr)
     if low >= 0 then gdy = floorRow - low end
@@ -350,6 +420,7 @@ for i, fr in ipairs(frames) do
   end
 end
 gdx, gdy = 0, 0
+gsq = {1, 0, 0, 1, 0, 0}
 
 -- carry hand touch-ups across rebuilds: any layer named with a leading '+'
 local prev = nil

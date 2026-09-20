@@ -48,12 +48,13 @@ class Parts:
             raise SystemExit("render: parts dir has no layer for %s" % ", ".join(missing))
 
 
-def compose(rig: riglib.Rig, parts: Parts, pose: dict, offset=(0, 0), cull=True):
+def compose(rig: riglib.Rig, parts: Parts, pose: dict, offset=(0, 0), cull=True, squash=0.0):
     """One frame. Returns (rgba, synth_visible, owner): `synth_visible` is True
     where the winning texel came from synthesised fill rather than authored art,
     and `owner` is the 1-based index into rig.parts of whichever part won.
 
     `offset` post-translates every part by whole texels; ground_lock uses it.
+    `squash` scales the whole frame about the rig's squash base, volume-preserving.
 
     `cull` drops any visible component of a part that consists solely of
     synthesised texels. Underlap is meant to be revealed *attached* to the art it
@@ -66,6 +67,8 @@ def compose(rig: riglib.Rig, parts: Parts, pose: dict, offset=(0, 0), cull=True)
     shift = np.array([[1.0, 0.0, float(offset[0])],
                       [0.0, 1.0, float(offset[1])],
                       [0.0, 0.0, 1.0]])
+    if squash:
+        shift = shift @ riglib.squash_matrix(squash, rig.squash_base())
     cache = {}
     layers = []
     for p in rig.parts:                      # backmost first; later parts win
@@ -102,7 +105,7 @@ def compose(rig: riglib.Rig, parts: Parts, pose: dict, offset=(0, 0), cull=True)
     return out, synth_vis, owner
 
 
-def ground_lock(rig: riglib.Rig, parts: Parts, pose: dict):
+def ground_lock(rig: riglib.Rig, parts: Parts, pose: dict, squash=0.0):
     """Slide the whole frame vertically, in whole texels, so the lowest texel
     lands on the floor row.
 
@@ -116,7 +119,7 @@ def ground_lock(rig: riglib.Rig, parts: Parts, pose: dict):
     if not rig.data.get("ground_lock", True):
         return (0, 0)
     floor = rig.cell[1] - 2
-    rgba, _, _ = compose(rig, parts, pose)
+    rgba, _, _ = compose(rig, parts, pose, squash=squash)
     rows = np.where((rgba[:, :, 3] > riglib.ALPHA_CUT).any(axis=1))[0]
     if not len(rows):
         return (0, 0)
@@ -131,12 +134,13 @@ def render_all(rig: riglib.Rig, parts: Parts):
     for state in rig.states:
         fps = float(state.get("fps", 8))
         first = len(frames)
-        for fr in state["frames"]:
-            pose = fr.get("pose", {})
-            off = (0, 0) if state["name"] in airborne else ground_lock(rig, parts, pose)
-            rgba, synth, owner = compose(rig, parts, pose, off)
+        resolved = riglib.resolve_state(rig, state)
+        for fr, rs in zip(state["frames"], resolved):
+            pose, sq = rs["pose"], rs["squash"]
+            off = (0, 0) if state["name"] in airborne else ground_lock(rig, parts, pose, sq)
+            rgba, synth, owner = compose(rig, parts, pose, off, squash=sq)
             frames.append(dict(rgba=rgba, synth=synth, owner=owner, state=state["name"],
-                               pose=pose, offset=off,
+                               pose=pose, squash=sq, offset=off,
                                ms=int(1000.0 / fps * int(fr.get("hold", 1)))))
         frames[first]["tag_from"] = first
         frames[-1]["tag_to"] = len(frames) - 1

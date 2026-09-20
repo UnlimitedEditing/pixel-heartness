@@ -1,0 +1,156 @@
+{
+  "name": "slime",
+  "source": "slime.png",
+  "parts_file": "out/slime_parts.aseprite",
+  "anim_file": "out/slime_anim.aseprite",
+  "strip_file": "out/slime_strip.png",
+  "cell": [
+    32,
+    32
+  ],
+  "underlap": 4,
+  "symmetry_x": 16,
+  "airborne_states": [
+    "air"
+  ],
+  "_note": "squash/stretch demo. `squash` is per frame: >0 flattens, <0 stretches, area conserved about the floor line under the root.",
+  "parts": [
+    {
+      "name": "body",
+      "rect": [
+        6,
+        17,
+        20,
+        15
+      ],
+      "pivot": [
+        16,
+        31
+      ],
+      "seeds": [
+        [
+          16,
+          28
+        ],
+        [
+          10,
+          25
+        ],
+        [
+          21,
+          25
+        ]
+      ]
+    },
+    {
+      "name": "eyes",
+      "rect": [
+        12,
+        23,
+        8,
+        2
+      ],
+      "pivot": [
+        16,
+        24
+      ],
+      "parent": "body",
+      "seeds": [
+        [
+          12,
+          23
+        ],
+        [
+          18,
+          23
+        ]
+      ]
+    }
+  ],
+  "states": [
+    {
+      "name": "idle",
+      "fps": 4,
+      "loop": true,
+      "min_distinct": 0.5,
+      "frames": [
+        {
+          "squash": 0.0
+        },
+        {
+          "squash": 0.08
+        },
+        {
+          "squash": 0.0
+        },
+        {
+          "squash": -0.05
+        }
+      ]
+    },
+    {
+      "name": "windup",
+      "fps": 10,
+      "loop": false,
+      "frames": [
+        {
+          "squash": 0.12
+        },
+        {
+          "squash": 0.3,
+          "hold": 2
+        }
+      ]
+    },
+    {
+      "name": "air",
+      "fps": 8,
+      "loop": false,
+      "frames": [
+        {
+          "squash": -0.3,
+          "pose": {
+            "body": {
+              "dy": -6
+            }
+          }
+        },
+        {
+          "squash": -0.12,
+          "pose": {
+            "body": {
+              "dy": -10
+            }
+          }
+        },
+        {
+          "squash": 0.0,
+          "pose": {
+            "body": {
+              "dy": -8
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "land",
+      "fps": 10,
+      "loop": false,
+      "frames": [
+        {
+          "squash": 0.34
+        },
+        {
+          "squash": -0.12
+        },
+        {
+          "squash": 0.1
+        },
+        {
+          "squash": 0.0
+        }
+      ]
+    }
+  ]
+}

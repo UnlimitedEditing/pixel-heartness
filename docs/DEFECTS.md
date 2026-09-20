@@ -14,3 +14,7 @@ One row per defect class: what found it, and what covers it now. The thesis this
 | Seed lands on another part's colour; `leg_l` steals shield edge | hand-typed seed coords | text colour dump | `segment.py validate_seeds` (patch-based) |
 | Seed on a transparent texel silently ignored | `m & opaque` in `rect_cores` | reading code | `segment.py validate_seeds` |
 | `agree` vacuous when the strip on disk came from `render.py` | both writers share `strip_file` | reading code | `ase_strip_file` split; `agree` compares colour too and fails on a stale strip |
+| Small part rotated ~20 degrees scrambles: eye splits, edge texels detach (wisp head, 12 texels) | nearest-neighbour rotation of a tiny part | **eye** (all gates green) | **open** -- convention only (keep small-part rotation to ~8 degrees); no gate yet |
+| Lag configured but tip barely moves; and first version of the gate measured local rotation, which shrinks down a cascade | lag primitive | gate, then reasoning about the cascade | `lag` gate, measured at the tip |
+| Squash drops or duplicates rows under nearest-neighbour | squash primitive | anticipated | `volume` |
+| Single synthetic texel beside head in frames 2 and 7 of the wisp | rotation reveals an underlap texel attached at one corner | eye | **open** -- passes `floaters` (attached); a `synth` texel-count bar per frame would flag it |

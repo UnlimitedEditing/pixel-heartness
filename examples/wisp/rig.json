@@ -1,0 +1,184 @@
+{
+  "name": "wisp",
+  "source": "wisp.png",
+  "parts_file": "out/wisp_parts.aseprite",
+  "anim_file": "out/wisp_anim.aseprite",
+  "strip_file": "out/wisp_strip.png",
+  "cell": [
+    40,
+    44
+  ],
+  "underlap": 4,
+  "symmetry_x": 20,
+  "ground_lock": false,
+  "airborne_states": [
+    "sway",
+    "flick"
+  ],
+  "lag_max_deg": 30,
+  "_note": "chain-lag demo. Only the head is animated; each tail segment has `lag` and trails its parent, cascading down the chain.",
+  "parts": [
+    {
+      "name": "t3",
+      "rect": [
+        18,
+        34,
+        4,
+        9
+      ],
+      "pivot": [
+        20,
+        34
+      ],
+      "parent": "t2",
+      "lag": 0.75,
+      "seeds": [
+        [
+          20,
+          38
+        ]
+      ]
+    },
+    {
+      "name": "t2",
+      "rect": [
+        17,
+        27,
+        6,
+        7
+      ],
+      "pivot": [
+        20,
+        27
+      ],
+      "parent": "t1",
+      "lag": 0.75,
+      "seeds": [
+        [
+          20,
+          30
+        ]
+      ]
+    },
+    {
+      "name": "t1",
+      "rect": [
+        16,
+        20,
+        8,
+        7
+      ],
+      "pivot": [
+        20,
+        20
+      ],
+      "parent": "head",
+      "lag": 0.75,
+      "seeds": [
+        [
+          20,
+          23
+        ]
+      ]
+    },
+    {
+      "name": "head",
+      "rect": [
+        14,
+        9,
+        12,
+        11
+      ],
+      "pivot": [
+        20,
+        20
+      ],
+      "seeds": [
+        [
+          20,
+          12
+        ],
+        [
+          17,
+          14
+        ],
+        [
+          23,
+          14
+        ]
+      ]
+    }
+  ],
+  "states": [
+    {
+      "name": "sway",
+      "fps": 6,
+      "loop": true,
+      "frames": [
+        {
+          "pose": {
+            "head": {
+              "rot": -8
+            }
+          }
+        },
+        {
+          "pose": {
+            "head": {
+              "rot": 0
+            }
+          }
+        },
+        {
+          "pose": {
+            "head": {
+              "rot": 8
+            }
+          }
+        },
+        {
+          "pose": {
+            "head": {
+              "rot": 0
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "flick",
+      "fps": 10,
+      "loop": true,
+      "frames": [
+        {
+          "pose": {
+            "head": {
+              "rot": 0
+            }
+          }
+        },
+        {
+          "pose": {
+            "head": {
+              "rot": -8
+            }
+          }
+        },
+        {
+          "pose": {
+            "head": {
+              "rot": 0
+            }
+          }
+        },
+        {
+          "pose": {
+            "head": {
+              "rot": 8
+            }
+          }
+        }
+      ]
+    }
+  ]
+}
