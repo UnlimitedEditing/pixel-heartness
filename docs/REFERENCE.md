@@ -142,6 +142,7 @@ Exit status is the number of failures. Run after every rig change.
 | `volume` | a squashed frame covers within `volume_tol` (default 15%) of the same pose unsquashed |
 | `lag` | each lagged part's tip sits at least ~0.75 texel from rigid FK, and its joint never gets more than `lag_max_deg` (default 25) of extra rotation |
 | `variant` | every variant is declared, used, and aligned with the part it replaces |
+| `rotation` | rotating a part does not lose, split or resize more than `damage_max` (0.5) of its small features |
 | `agree` | a fresh `render.py` render matches `rig.lua`'s separate strip (`*_strip_ase.png`) in shape and colour; SKIPPED if absent, fails if stale |
 
 `distinct` takes its bar per state (`states[].min_distinct`, default 2%), because the
@@ -167,9 +168,14 @@ non-looping states start unlagged. Deep links need a high `lag` (~0.75 in the wi
 one only sees the previous link's damped motion. `examples/wisp` is the subject. **The driver must
 rotate a parent**: a `dx` swing of the root does not lag.
 
-**Small parts and rotation.** At ~12 texels, a head rotated 18-26 degrees comes out scrambled
-under nearest-neighbour sampling (eyes split, edge texels detach) and no gate says so. Keep
-rotation of small parts to about 8 degrees and let lag carry the motion elsewhere.
+**Small parts and rotation.** Nearest-neighbour rotation of a small part is lossy: a 2x2 eye
+loses a texel and becomes an L, a pupil vanishes. The `rotation` gate tracks every small
+single-colour region (4-16 texels, outline colour excluded) through the frame's transform and
+fails a part-frame that ruins more than `damage_max` (default 50%) of them. **There is no safe
+angle rule.** Damage is not monotonic: on the 12-texel wisp head 6 degrees ruins the eyes, 8 is
+clean, 10-16 half-ruin them, 18 ruins them, because it depends on where the features land on
+the texel grid. Use `python pixelanim/rotscan.py <rig> <part>` to list the clean angles for a
+part and author from that list.
 
 **Part variants.** `parts[].variants: {"blink": "slime_eyes_blink.png"}`, used per frame as
 `pose: {"eyes": {"variant": "blink"}}`. A variant is *authored* alternate art for one part: a

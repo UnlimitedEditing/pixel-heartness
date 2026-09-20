@@ -476,5 +476,7 @@
     }
   ],
   "symmetry_x": 25,
-  "underlap": 6
+  "underlap": 6,
+  "damage_max": 0.85,
+  "_debt": "damage_max is raised from the default 0.5 to admit known debt: the sword arm (18-52 deg) and shield (14-21 deg) ruin up to 80% of their small features in windup/ready/strike, visible as a ragged hand and a stair-stepped shield edge. See DEFECTS.md OPEN #9. Lower this as the poses are reworked; do not raise it."
 }

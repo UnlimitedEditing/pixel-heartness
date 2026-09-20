@@ -15,7 +15,7 @@ out/<name>_parts/             RGBA layer + provenance mask per part
    | render.py                pose + composite (fast path)
    | rig.lua (Aseprite)       same maths, for hand touch-ups (optional)
 out/<name>_strip.png + .json  frame strip + Aseprite-style tag table
-   | checks.py                thirteen mechanical gates
+   | checks.py                fourteen mechanical gates
    | sheet.py                 look at it (grid, parts, contact sheet, gif, text maps)
 ```
 
@@ -53,7 +53,7 @@ JSON; relative paths (`source`, `parts_file`, `anim_file`, `strip_file`) resolve
 
 | path | what |
 |---|---|
-| `pixelanim/` | segment, render, checks, sheet, riglib, rig.lua, retarget |
+| `pixelanim/` | segment, render, checks, sheet, riglib, rig.lua, retarget, rotscan |
 | `examples/skeleton_warrior/` | rig + source sprite: biped FK |
 | `examples/slime/`, `examples/wisp/` | squash/stretch and chain-lag subjects; `python examples/make_examples.py` regenerates them |
 | `docs/REFERENCE.md` | how the cut, gates, ground lock work |

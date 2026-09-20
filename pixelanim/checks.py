@@ -289,6 +289,101 @@ def gate_variant(rig, parts, frames, args):
     return not bad, bad or ["%d variants, all used and aligned" % len(declared)]
 
 
+def _regions(layer, col):
+    """8-connected regions of one exact colour in a part layer."""
+    a = (layer[:, :, 3] > riglib.ALPHA_CUT) & (layer[:, :, :3] == np.array(col)).all(axis=2)
+    lab, k = ndimage.label(a, structure=np.ones((3, 3)))
+    out = []
+    for i in range(1, k + 1):
+        ys, xs = np.where(lab == i)
+        out.append(dict(area=len(xs), cen=np.array([xs.mean() + 0.5, ys.mean() + 0.5]),
+                        fill=len(xs) / ((xs.max() - xs.min() + 1) * (ys.max() - ys.min() + 1))))
+    return out
+
+
+def _features(layer, lo, hi):
+    """Small single-colour regions worth tracking: `lo`..`hi` texels, not the
+    darkest colour (the outline, whose 1-texel lines legitimately break up)."""
+    a = layer[:, :, 3] > riglib.ALPHA_CUT
+    cols = [tuple(c) for c in np.unique(layer[:, :, :3][a].reshape(-1, 3), axis=0).tolist()]
+    if not cols:
+        return []
+    dark = min(cols, key=sum)
+    return [(c, f) for c in cols if c != dark for f in _regions(layer, c) if lo <= f["area"] <= hi]
+
+
+def _damaged(base, new, M, feats, tol, rad=2.5):
+    """How many tracked features did the transform ruin? A feature is ruined when
+    it is lost or split (a different number of regions of its colour near where
+    it should land than sat near it at rest), when its area drifted by more than
+    `tol`, or when a solid block of six texels or fewer stopped being solid."""
+    bad = []
+    for c, f in feats:
+        exp = (M @ np.array([f["cen"][0], f["cen"][1], 1.0]))[:2]
+        rest_near = [g for g in _regions(base, c) if np.hypot(*(g["cen"] - f["cen"])) <= rad]
+        new_near = [g for g in _regions(new, c) if np.hypot(*(g["cen"] - exp)) <= rad]
+        if not new_near or len(new_near) != len(rest_near):
+            bad.append(c)
+            continue
+        g = min(new_near, key=lambda g: np.hypot(*(g["cen"] - exp)))
+        if abs(g["area"] - f["area"]) / f["area"] > tol or (
+                f["fill"] >= 0.99 and g["fill"] < 0.99 and f["area"] <= 6):
+            bad.append(c)
+    return bad
+
+
+def gate_rotation(rig, parts, frames, args):
+    """Rotation must not wreck a part's small details.
+
+    Nearest-neighbour rotation of a small part is lossy in a way the other gates
+    cannot see: a 2x2 eye loses a texel and becomes an L, a pupil vanishes, a
+    highlight splits. The palette stays closed, the silhouette stays whole, no
+    hole opens -- and it reads as scrambled. This tracks every small
+    single-colour region (`feature_min`..`feature_max` texels, default 4..16,
+    outline colour excluded) through the same transform the frame applies, and
+    counts how many were lost, split, or changed size by more than 20%.
+
+    A part-frame fails when more than `damage_max` (rig field, default 0.5) of
+    its features are ruined, for parts with at least two features. Regions of
+    2-3 texels are not tracked: losing one texel of a 2-texel patch is a 50%
+    change and pure noise. The wisp head separates cleanly (0% at 8 degrees,
+    100% at 22); a rig that already carries this debt states its own budget in
+    `damage_max` and DEFECTS.md records it.
+    """
+    lo, hi = int(rig.data.get("feature_min", 4)), int(rig.data.get("feature_max", 16))
+    limit = float(rig.data.get("damage_max", 0.5))
+    base_feats = {p["name"]: _features(parts.layer[p["name"]], lo, hi) for p in rig.parts}
+    bad, tracked, ruined, worst = [], 0, 0, 0.0
+    for st in rig.states:
+        for j, rs in enumerate(riglib.resolve_state(rig, st)):
+            cache = {}
+            for p in rig.parts:
+                n = p["name"]
+                feats = base_feats[n]
+                M = riglib.world_matrix(rig, n, rs["pose"], cache)
+                # only rotation (and scale) damages; a pure translation is exact,
+                # and squash is a deliberate deformation, not a sampling loss
+                if not feats or np.allclose(M[:2, :2], np.eye(2), atol=1e-9):
+                    continue
+                new = riglib.sample_nearest(parts.layer[n], M, rig.cell)
+                hit = _damaged(parts.layer[n], new, M, feats, 0.2)
+                tracked += len(feats)
+                ruined += len(hit)
+                frac = len(hit) / len(feats)
+                if len(feats) >= 2:
+                    worst = max(worst, frac)
+                    if frac > limit:
+                        ang = np.degrees(np.arctan2(M[1, 0], M[0, 0]))
+                        bad.append((frac, "%s frame %d %s: %d of %d small features ruined at %.0f deg"
+                                    % (st["name"], j, n, len(hit), len(feats), ang)))
+    bad.sort(key=lambda t: -t[0])
+    if bad:
+        return False, ["%d part-frames ruin more than %.0f%% of their small features (worst %.0f%%)"
+                       % (len(bad), 100 * limit, 100 * worst)] + [b[1] for b in bad[:8]]
+    return True, ["%d of %d small features ruined overall; worst part-frame %.0f%% (limit %.0f%%)"
+                  % (ruined, tracked, 100 * worst, 100 * limit)]
+
+
 def gate_volume(rig, parts, frames, args):
     """Squash and stretch must conserve volume. The matrix does by construction
     (sx = 1/sy); nearest-neighbour sampling then drops or duplicates whole rows
@@ -395,7 +490,7 @@ def gate_agree(rig, parts, frames, args):
 
 GATES = [("rest", gate_rest), ("palette", gate_palette), ("holes", gate_holes),
          ("floaters", gate_floaters), ("border", gate_border), ("wholetexel", gate_wholetexel), ("ground", gate_ground),
-         ("distinct", gate_distinct), ("synth", gate_synth), ("volume", gate_volume), ("variant", gate_variant),
+         ("distinct", gate_distinct), ("synth", gate_synth), ("volume", gate_volume), ("rotation", gate_rotation), ("variant", gate_variant),
          ("lag", gate_lag), ("agree", gate_agree)]
 
 

@@ -8,7 +8,7 @@ The thesis this tests: *eyes scale with the number of primitives, not the number
 
 | # | defect | why it is open | what would close it |
 |---|---|---|---|
-| 1 | A small part rotated more than ~8 degrees scrambles: eyes split, edge texels detach (12-texel wisp head at 18-26 deg) | nearest-neighbour rotation of a tiny part; nothing measures it | a gate comparing a rotated frame's silhouette/interior connectivity to the unrotated part, or refusing `rot` above a size-dependent limit. Today: a convention in REFERENCE.md |
+| 1 | ~~A small part rotated more than ~8 degrees scrambles~~ **CLOSED** by the `rotation` gate and `rotscan.py`. The "~8 degrees" rule of thumb was wrong: damage is not monotonic in angle | | |
 | 2 | A single synthetic texel sits beside the wisp head in frames 2 and 7 | attached at one corner, so it passes `floaters` | per-frame cap on visible synth texels, or a rule that visible synth texels must be adjacent to at least two authored ones |
 | 3 | Swapping a part variant can expose body texels the part had claimed, or underlap fill | segmentation assigns a part whatever the flood reaches; a variant redraws only part of that | `variant` gate warning when the variant does not cover the part's authored footprint and the uncovered texels have no authored body beneath |
 | 4 | Squash is not seen when segmentation sizes underlap | squash is a global matrix applied after the rig's pose list is read | include the squash matrix in `required_underlap`; low priority, drift is small |
@@ -16,6 +16,7 @@ The thesis this tests: *eyes scale with the number of primitives, not the number
 | 6 | Lag: looping settles over 3 passes, non-looping starts unlagged; a state entered mid-motion is not modelled | no notion of the previous state | carry lag state across state transitions once the engine side can switch states |
 | 7 | A retargeted state can contain invented small motions and still tear a hole | tracker jitter on short bones becomes rotation | `holes` catches it after the fact; the deadband and `--smooth` reduce it. A retarget-time check that renders the candidate and refuses on any gate failure would close it |
 | 8 | Retarget error is dominated by short bones (a fraction of a texel is several degrees) | 2D keypoints at 46 texels | fit against the mean of several nearby frames, or weight by bone length; not tried |
+| 9 | The skeleton's own sword arm (18-52 deg) and shield (14-21 deg) ruin up to 80% of their small features in windup, ready and strike: ragged hand, stair-stepped shield edge | found when the `rotation` gate was calibrated; visible in the contact sheet, never recorded before | rework those poses using clean angles from `rotscan.py`, or give the parts variants; then lower `damage_max` in the rig (currently 0.85, budgeted with a `_debt` note) |
 
 ## Backlog (deliberately not done, from the handoff)
 
@@ -53,4 +54,6 @@ Ordered as the handoff ordered them; item numbers are its section numbers.
 | Single synthetic texel beside head in frames 2 and 7 of the wisp | rotation reveals an underlap texel attached at one corner | eye | **OPEN #2** -- passes `floaters` (attached); a `synth` texel-count bar per frame would flag it |
 | Key reduction by extrema missed a slope corner (strike middle key), 1/3 recovered | keys are corners as well as extrema | round-trip selftest | greedy piecewise-linear simplification in `retarget.py` |
 | Fit invented small rotations on parts the animator held still, and one tore a hole | tracker jitter on short bones | gate (`holes`), then eye on the fitted numbers | deadband scaled by bone length; still **OPEN #7** |
+| Small-part rotation scramble (wisp head, then found again on the skeleton sword arm and shield) | nearest-neighbour rotation loses small features; non-monotonic in angle | **eye** twice, then a probe that measured it | `rotation` gate (per-feature damage) + `rotscan.py`; skeleton debt is **OPEN #9** |
+| Two calibration mistakes on the way: region-count change (36/54 skeleton part-frames flagged, mostly 1-px outline) and supersampled-mismatch (measured sub-texel phase, not scramble) | wrong metric | probing on known-good and known-bad rigs | per-feature tracking, outline excluded, features of 4+ texels |
 | Variant swap exposed body texels the `eyes` part had grabbed during segmentation (synth 0% -> 4%) | a part's flood claimed texels its variant does not redraw | `synth` gate delta, then eye | fixed in the example by seeding the body there; **OPEN #3** for the general case |
