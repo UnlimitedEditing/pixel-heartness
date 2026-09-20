@@ -33,6 +33,11 @@ class Rig:
                 data[key] = (path.resolve().parent / data[key]).as_posix()
         self.cell = (int(data["cell"][0]), int(data["cell"][1]))
         self.parts = list(data["parts"])          # backmost first == z order
+        self.view_pivots = {}
+        if data.get("view_pivots"):
+            vp = Path(data["view_pivots"])
+            vp = vp if vp.is_absolute() else path.resolve().parent / vp
+            self.view_pivots = json.loads(vp.read_text(encoding="utf-8"))
         for p in self.parts:                      # variant art, relative to the rig file
             for v, f in list(p.get("variants", {}).items()):
                 if not Path(f).is_absolute():
@@ -228,7 +233,8 @@ def yaw_plan(rig: Rig, parts, yaw_deg: float):
         if v.get("patch_handed") and p.get("handed"):
             sgn = 1.0      # a handed part (the shield and its arms) keeps its side in a mirrored view
         m = np.array([[sgn * scale, 0.0, ax - sgn * scale * ax], [0.0, 1.0, 0.0], [0.0, 0.0, 1.0]])
-        plan[name] = dict(variant=v.get("variant"), matrix=m, view=v["name"])
+        vp = rig.view_pivots.get(v.get("variant") or "", {})
+        plan[name] = dict(variant=v.get("variant"), matrix=m, view=v["name"], pivot=vp.get(name))
         base = (i - (n - 1) / 2.0) * step
         if v.get("variant"):
             depth.append(i * 1e-3)                  # profile art: rig z order
@@ -239,6 +245,23 @@ def yaw_plan(rig: Rig, parts, yaw_deg: float):
             depth.append(base * c + (xc - ax) * sn)
     order = sorted(range(n), key=lambda i: (depth[i], i))
     return plan, order
+
+
+def yaw_gain(pose: dict, yaw_deg: float, gains: dict | None) -> dict:
+    """View-dependent amplitude. A limb swing authored in the picture plane is only right at one
+    facing: a walk's leg swing is depth motion from the front (the rig fakes it with a small
+    in-plane rotation) and true in-plane motion in profile. `gains` maps part -> key -> [m_front,
+    m_side]; the value is multiplied by lerp(m_front, m_side, |sin yaw|). The sign is not touched:
+    a mirrored view mirrors the swing by itself."""
+    if not gains:
+        return pose
+    g = abs(math.sin(math.radians(yaw_deg)))
+    out = {k: dict(v) for k, v in pose.items()}
+    for part, keys in gains.items():
+        for key, (mf, ms) in keys.items():
+            if part in out and key in out[part]:
+                out[part][key] = out[part][key] * (mf * (1.0 - g) + ms * g)
+    return out
 
 
 def load_rig(path) -> Rig:
@@ -283,16 +306,19 @@ def pose_matrix(pose: dict, pivot) -> np.ndarray:
     return t2 @ r @ t1
 
 
-def world_matrix(rig: Rig, part_name: str, pose: dict, cache: dict | None = None) -> np.ndarray:
-    """FK: a part's matrix is its parent's composed with its own local pose."""
+def world_matrix(rig: Rig, part_name: str, pose: dict, cache: dict | None = None,
+                 pivots: dict | None = None) -> np.ndarray:
+    """FK: a part's matrix is its parent's composed with its own local pose. `pivots` overrides
+    the rig's pivots part by part (a generated view has its own joints)."""
     cache = {} if cache is None else cache
     if part_name in cache:
         return cache[part_name]
     part = rig.by_name[part_name]
-    m = pose_matrix(pose.get(part_name, {}), part["pivot"])
+    pv = pivots[part_name] if pivots and part_name in pivots else part["pivot"]
+    m = pose_matrix(pose.get(part_name, {}), pv)
     parent = part.get("parent")
     if parent:
-        m = world_matrix(rig, parent, pose, cache) @ m
+        m = world_matrix(rig, parent, pose, cache, pivots) @ m
     cache[part_name] = m
     return m
 

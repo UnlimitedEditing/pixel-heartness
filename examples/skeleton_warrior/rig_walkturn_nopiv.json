@@ -1,0 +1,915 @@
+{
+  "name": "skeleton_walkturn",
+  "source": "skeleton_warrior.png",
+  "parts_file": "out/walkturn_parts.aseprite",
+  "anim_file": "out/walkturn_anim.aseprite",
+  "strip_file": "out/walkturn_strip.png",
+  "cell": [
+    48,
+    48
+  ],
+  "_note": "parts are listed backmost first; that order is the z order. `seeds` are the authoritative cut hints (cell coords, y down, read off Tools/anim/sheet.py grid); `rect` is only a fallback when seeds are absent. `mirror_of` rebuilds a part its occluder hid, from its bilateral twin.",
+  "parts": [
+    {
+      "name": "leg_r",
+      "rect": [
+        27,
+        30,
+        10,
+        18
+      ],
+      "pivot": [
+        31,
+        31
+      ],
+      "parent": "pelvis",
+      "seeds": [
+        [
+          30,
+          35
+        ],
+        [
+          29,
+          42
+        ],
+        [
+          31,
+          45
+        ],
+        [
+          29,
+          33
+        ]
+      ],
+      "variants": {
+        "v45": "views/v45_leg_r.png",
+        "v90": "views/v90_leg_r.png",
+        "v135": "views/v135_leg_r.png",
+        "v180": "views/v180_leg_r.png"
+      }
+    },
+    {
+      "name": "leg_l",
+      "rect": [
+        17,
+        30,
+        9,
+        18
+      ],
+      "pivot": [
+        23,
+        31
+      ],
+      "parent": "pelvis",
+      "seeds": [
+        [
+          19,
+          40
+        ],
+        [
+          18,
+          42
+        ],
+        [
+          17,
+          45
+        ]
+      ],
+      "mirror_of": "leg_r",
+      "variants": {
+        "v45": "views/v45_leg_l.png",
+        "v90": "views/v90_leg_l.png",
+        "v135": "views/v135_leg_l.png",
+        "v180": "views/v180_leg_l.png"
+      }
+    },
+    {
+      "name": "pelvis",
+      "rect": [
+        22,
+        24,
+        11,
+        8
+      ],
+      "pivot": [
+        27,
+        28
+      ],
+      "parent": null,
+      "seeds": [
+        [
+          24,
+          22
+        ],
+        [
+          27,
+          26
+        ]
+      ],
+      "mirror_of": "pelvis",
+      "variants": {
+        "v45": "views/v45_pelvis.png",
+        "v90": "views/v90_pelvis.png",
+        "v135": "views/v135_pelvis.png",
+        "v180": "views/v180_pelvis.png"
+      }
+    },
+    {
+      "name": "torso",
+      "rect": [
+        20,
+        13,
+        13,
+        12
+      ],
+      "pivot": [
+        27,
+        26
+      ],
+      "parent": "pelvis",
+      "seeds": [
+        [
+          24,
+          16
+        ],
+        [
+          26,
+          18
+        ]
+      ],
+      "mirror_of": "torso",
+      "variants": {
+        "v45": "views/v45_torso.png",
+        "v90": "views/v90_torso.png",
+        "v135": "views/v135_torso.png",
+        "v180": "views/v180_torso.png"
+      }
+    },
+    {
+      "name": "head",
+      "rect": [
+        18,
+        1,
+        15,
+        14
+      ],
+      "pivot": [
+        25,
+        15
+      ],
+      "parent": "torso",
+      "seeds": [
+        [
+          25,
+          7
+        ]
+      ],
+      "variants": {
+        "v45": "views/v45_head.png",
+        "v90": "views/v90_head.png",
+        "v135": "views/v135_head.png",
+        "v180": "views/v180_head.png"
+      }
+    },
+    {
+      "name": "arm_weapon",
+      "rect": [
+        29,
+        21,
+        11,
+        13
+      ],
+      "pivot": [
+        32,
+        23
+      ],
+      "parent": "torso",
+      "seeds": [
+        [
+          33,
+          22
+        ],
+        [
+          34,
+          26
+        ],
+        [
+          36,
+          30
+        ]
+      ],
+      "variants": {
+        "v45": "views/v45_arm_weapon.png",
+        "v90": "views/v90_arm_weapon.png",
+        "v135": "views/v135_arm_weapon.png",
+        "v180": "views/v180_arm_weapon.png"
+      },
+      "handed": true
+    },
+    {
+      "name": "arm_shield",
+      "rect": [
+        17,
+        16,
+        8,
+        8
+      ],
+      "pivot": [
+        22,
+        20
+      ],
+      "parent": "torso",
+      "seeds": [
+        [
+          18,
+          17
+        ],
+        [
+          19,
+          18
+        ]
+      ],
+      "mirror_of": "arm_weapon",
+      "variants": {
+        "v45": "views/v45_arm_shield.png",
+        "v90": "views/v90_arm_shield.png",
+        "v135": "views/v135_arm_shield.png",
+        "v180": "views/v180_arm_shield.png"
+      },
+      "handed": true
+    },
+    {
+      "name": "shield",
+      "rect": [
+        9,
+        19,
+        20,
+        22
+      ],
+      "pivot": [
+        20,
+        24
+      ],
+      "parent": "arm_shield",
+      "seeds": [
+        [
+          20,
+          21
+        ],
+        [
+          20,
+          24
+        ],
+        [
+          13,
+          30
+        ],
+        [
+          16,
+          36
+        ]
+      ],
+      "variants": {
+        "v45": "views/v45_shield.png",
+        "v90": "views/v90_shield.png",
+        "v135": "views/v135_shield.png",
+        "v180": "views/v180_shield.png"
+      },
+      "handed": true
+    }
+  ],
+  "states": [
+    {
+      "name": "walk_000",
+      "fps": 8,
+      "loop": true,
+      "min_distinct": 0.2,
+      "yaw_gain": {
+        "leg_l": {
+          "rot": [
+            1.0,
+            2.5
+          ]
+        },
+        "leg_r": {
+          "rot": [
+            1.0,
+            2.5
+          ]
+        }
+      },
+      "frames": [
+        {
+          "pose": {
+            "leg_l": {
+              "rot": -10
+            },
+            "leg_r": {
+              "rot": 10
+            }
+          },
+          "yaw": 0
+        },
+        {
+          "pose": {
+            "torso": {
+              "dy": -1
+            },
+            "leg_l": {
+              "rot": 0
+            },
+            "leg_r": {
+              "rot": 0
+            }
+          },
+          "yaw": 0
+        },
+        {
+          "pose": {
+            "leg_l": {
+              "rot": 10
+            },
+            "leg_r": {
+              "rot": -10
+            }
+          },
+          "yaw": 0
+        },
+        {
+          "pose": {
+            "torso": {
+              "dy": -1
+            },
+            "leg_l": {
+              "rot": 0
+            },
+            "leg_r": {
+              "rot": 0
+            }
+          },
+          "yaw": 0
+        }
+      ]
+    },
+    {
+      "name": "walk_045",
+      "fps": 8,
+      "loop": true,
+      "min_distinct": 0.2,
+      "yaw_gain": {
+        "leg_l": {
+          "rot": [
+            1.0,
+            2.5
+          ]
+        },
+        "leg_r": {
+          "rot": [
+            1.0,
+            2.5
+          ]
+        }
+      },
+      "frames": [
+        {
+          "pose": {
+            "leg_l": {
+              "rot": -10
+            },
+            "leg_r": {
+              "rot": 10
+            }
+          },
+          "yaw": 45
+        },
+        {
+          "pose": {
+            "torso": {
+              "dy": -1
+            },
+            "leg_l": {
+              "rot": 0
+            },
+            "leg_r": {
+              "rot": 0
+            }
+          },
+          "yaw": 45
+        },
+        {
+          "pose": {
+            "leg_l": {
+              "rot": 10
+            },
+            "leg_r": {
+              "rot": -10
+            }
+          },
+          "yaw": 45
+        },
+        {
+          "pose": {
+            "torso": {
+              "dy": -1
+            },
+            "leg_l": {
+              "rot": 0
+            },
+            "leg_r": {
+              "rot": 0
+            }
+          },
+          "yaw": 45
+        }
+      ]
+    },
+    {
+      "name": "walk_090",
+      "fps": 8,
+      "loop": true,
+      "min_distinct": 0.2,
+      "yaw_gain": {
+        "leg_l": {
+          "rot": [
+            1.0,
+            2.5
+          ]
+        },
+        "leg_r": {
+          "rot": [
+            1.0,
+            2.5
+          ]
+        }
+      },
+      "frames": [
+        {
+          "pose": {
+            "leg_l": {
+              "rot": -10
+            },
+            "leg_r": {
+              "rot": 10
+            }
+          },
+          "yaw": 90
+        },
+        {
+          "pose": {
+            "torso": {
+              "dy": -1
+            },
+            "leg_l": {
+              "rot": 0
+            },
+            "leg_r": {
+              "rot": 0
+            }
+          },
+          "yaw": 90
+        },
+        {
+          "pose": {
+            "leg_l": {
+              "rot": 10
+            },
+            "leg_r": {
+              "rot": -10
+            }
+          },
+          "yaw": 90
+        },
+        {
+          "pose": {
+            "torso": {
+              "dy": -1
+            },
+            "leg_l": {
+              "rot": 0
+            },
+            "leg_r": {
+              "rot": 0
+            }
+          },
+          "yaw": 90
+        }
+      ]
+    },
+    {
+      "name": "walk_135",
+      "fps": 8,
+      "loop": true,
+      "min_distinct": 0.2,
+      "yaw_gain": {
+        "leg_l": {
+          "rot": [
+            1.0,
+            2.5
+          ]
+        },
+        "leg_r": {
+          "rot": [
+            1.0,
+            2.5
+          ]
+        }
+      },
+      "frames": [
+        {
+          "pose": {
+            "leg_l": {
+              "rot": -10
+            },
+            "leg_r": {
+              "rot": 10
+            }
+          },
+          "yaw": 135
+        },
+        {
+          "pose": {
+            "torso": {
+              "dy": -1
+            },
+            "leg_l": {
+              "rot": 0
+            },
+            "leg_r": {
+              "rot": 0
+            }
+          },
+          "yaw": 135
+        },
+        {
+          "pose": {
+            "leg_l": {
+              "rot": 10
+            },
+            "leg_r": {
+              "rot": -10
+            }
+          },
+          "yaw": 135
+        },
+        {
+          "pose": {
+            "torso": {
+              "dy": -1
+            },
+            "leg_l": {
+              "rot": 0
+            },
+            "leg_r": {
+              "rot": 0
+            }
+          },
+          "yaw": 135
+        }
+      ]
+    },
+    {
+      "name": "walk_180",
+      "fps": 8,
+      "loop": true,
+      "min_distinct": 0.2,
+      "yaw_gain": {
+        "leg_l": {
+          "rot": [
+            1.0,
+            2.5
+          ]
+        },
+        "leg_r": {
+          "rot": [
+            1.0,
+            2.5
+          ]
+        }
+      },
+      "frames": [
+        {
+          "pose": {
+            "leg_l": {
+              "rot": -10
+            },
+            "leg_r": {
+              "rot": 10
+            }
+          },
+          "yaw": 180
+        },
+        {
+          "pose": {
+            "torso": {
+              "dy": -1
+            },
+            "leg_l": {
+              "rot": 0
+            },
+            "leg_r": {
+              "rot": 0
+            }
+          },
+          "yaw": 180
+        },
+        {
+          "pose": {
+            "leg_l": {
+              "rot": 10
+            },
+            "leg_r": {
+              "rot": -10
+            }
+          },
+          "yaw": 180
+        },
+        {
+          "pose": {
+            "torso": {
+              "dy": -1
+            },
+            "leg_l": {
+              "rot": 0
+            },
+            "leg_r": {
+              "rot": 0
+            }
+          },
+          "yaw": 180
+        }
+      ]
+    },
+    {
+      "name": "walk_225",
+      "fps": 8,
+      "loop": true,
+      "min_distinct": 0.2,
+      "yaw_gain": {
+        "leg_l": {
+          "rot": [
+            1.0,
+            2.5
+          ]
+        },
+        "leg_r": {
+          "rot": [
+            1.0,
+            2.5
+          ]
+        }
+      },
+      "frames": [
+        {
+          "pose": {
+            "leg_l": {
+              "rot": -10
+            },
+            "leg_r": {
+              "rot": 10
+            }
+          },
+          "yaw": 225
+        },
+        {
+          "pose": {
+            "torso": {
+              "dy": -1
+            },
+            "leg_l": {
+              "rot": 0
+            },
+            "leg_r": {
+              "rot": 0
+            }
+          },
+          "yaw": 225
+        },
+        {
+          "pose": {
+            "leg_l": {
+              "rot": 10
+            },
+            "leg_r": {
+              "rot": -10
+            }
+          },
+          "yaw": 225
+        },
+        {
+          "pose": {
+            "torso": {
+              "dy": -1
+            },
+            "leg_l": {
+              "rot": 0
+            },
+            "leg_r": {
+              "rot": 0
+            }
+          },
+          "yaw": 225
+        }
+      ]
+    },
+    {
+      "name": "walk_270",
+      "fps": 8,
+      "loop": true,
+      "min_distinct": 0.2,
+      "yaw_gain": {
+        "leg_l": {
+          "rot": [
+            1.0,
+            2.5
+          ]
+        },
+        "leg_r": {
+          "rot": [
+            1.0,
+            2.5
+          ]
+        }
+      },
+      "frames": [
+        {
+          "pose": {
+            "leg_l": {
+              "rot": -10
+            },
+            "leg_r": {
+              "rot": 10
+            }
+          },
+          "yaw": 270
+        },
+        {
+          "pose": {
+            "torso": {
+              "dy": -1
+            },
+            "leg_l": {
+              "rot": 0
+            },
+            "leg_r": {
+              "rot": 0
+            }
+          },
+          "yaw": 270
+        },
+        {
+          "pose": {
+            "leg_l": {
+              "rot": 10
+            },
+            "leg_r": {
+              "rot": -10
+            }
+          },
+          "yaw": 270
+        },
+        {
+          "pose": {
+            "torso": {
+              "dy": -1
+            },
+            "leg_l": {
+              "rot": 0
+            },
+            "leg_r": {
+              "rot": 0
+            }
+          },
+          "yaw": 270
+        }
+      ]
+    },
+    {
+      "name": "walk_315",
+      "fps": 8,
+      "loop": true,
+      "min_distinct": 0.2,
+      "yaw_gain": {
+        "leg_l": {
+          "rot": [
+            1.0,
+            2.5
+          ]
+        },
+        "leg_r": {
+          "rot": [
+            1.0,
+            2.5
+          ]
+        }
+      },
+      "frames": [
+        {
+          "pose": {
+            "leg_l": {
+              "rot": -10
+            },
+            "leg_r": {
+              "rot": 10
+            }
+          },
+          "yaw": 315
+        },
+        {
+          "pose": {
+            "torso": {
+              "dy": -1
+            },
+            "leg_l": {
+              "rot": 0
+            },
+            "leg_r": {
+              "rot": 0
+            }
+          },
+          "yaw": 315
+        },
+        {
+          "pose": {
+            "leg_l": {
+              "rot": 10
+            },
+            "leg_r": {
+              "rot": -10
+            }
+          },
+          "yaw": 315
+        },
+        {
+          "pose": {
+            "torso": {
+              "dy": -1
+            },
+            "leg_l": {
+              "rot": 0
+            },
+            "leg_r": {
+              "rot": 0
+            }
+          },
+          "yaw": 315
+        }
+      ]
+    }
+  ],
+  "symmetry_x": 25,
+  "underlap": 6,
+  "damage_max": 1.0,
+  "_debt": "damage_max is raised from the default 0.5 to admit known debt: the sword arm (18-52 deg) and shield (14-21 deg) ruin up to 80% of their small features in windup/ready/strike, visible as a ragged hand and a stair-stepped shield edge. See DEFECTS.md OPEN #9. Lower this as the poses are reworked; do not raise it.",
+  "views": [
+    {
+      "name": "front",
+      "angle": 0,
+      "variant": null,
+      "mirror": false
+    },
+    {
+      "name": "v45",
+      "angle": 45,
+      "variant": "v45",
+      "mirror": false
+    },
+    {
+      "name": "v90",
+      "angle": 90,
+      "variant": "v90",
+      "mirror": false
+    },
+    {
+      "name": "v135",
+      "angle": 135,
+      "variant": "v135",
+      "mirror": false
+    },
+    {
+      "name": "v180",
+      "angle": 180,
+      "variant": "v180",
+      "mirror": false
+    },
+    {
+      "name": "v135m",
+      "angle": 225,
+      "variant": "v135",
+      "mirror": true,
+      "patch_handed": true
+    },
+    {
+      "name": "v90m",
+      "angle": 270,
+      "variant": "v90",
+      "mirror": true
+    },
+    {
+      "name": "v45m",
+      "angle": 315,
+      "variant": "v45",
+      "mirror": true,
+      "patch_handed": true
+    }
+  ]
+}

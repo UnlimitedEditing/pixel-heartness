@@ -48,16 +48,22 @@ class Parts:
         # the source, so it lines up by the same placement rule. Nothing in it is
         # invented, so its synth mask is empty.
         self.variant_layer = {}
+        self.variant_synth = {}
         for p in rig.parts:
             for v, f in p.get("variants", {}).items():
                 arr, _ = riglib.place_in_cell(Image.open(f), rig.cell)
                 self.variant_layer[(p["name"], v)] = arr
+                sf = Path(f).with_suffix("").as_posix() + ".synth.png"
+                if Path(sf).is_file():
+                    sm, _ = riglib.place_in_cell(Image.open(sf), rig.cell)
+                    self.variant_synth[(p["name"], v)] = sm[:, :, 3] > riglib.ALPHA_CUT
         missing = [p["name"] for p in rig.parts if p["name"] not in self.layer]
         if missing:
             raise SystemExit("render: parts dir has no layer for %s" % ", ".join(missing))
 
 
-def compose(rig: riglib.Rig, parts: Parts, pose: dict, offset=(0, 0), cull=True, squash=0.0, yaw=0.0):
+def compose(rig: riglib.Rig, parts: Parts, pose: dict, offset=(0, 0), cull=True, squash=0.0, yaw=0.0,
+            flash=None):
     """One frame. Returns (rgba, synth_visible, owner): `synth_visible` is True
     where the winning texel came from synthesised fill rather than authored art,
     and `owner` is the 1-based index into rig.parts of whichever part won.
@@ -83,19 +89,22 @@ def compose(rig: riglib.Rig, parts: Parts, pose: dict, offset=(0, 0), cull=True,
     if yaw:
         plan, order = riglib.yaw_plan(rig, parts, yaw)
     cache = {}
+    pivots = None
+    if plan:
+        pivots = {n: pl["pivot"] for n, pl in plan.items() if pl.get("pivot") is not None} or None
     layers = []
     for p in rig.parts:                      # layers stay in rig order; `order` sorts them below
         n = p["name"]
-        m = shift @ riglib.world_matrix(rig, n, pose, cache)
+        m = shift @ riglib.world_matrix(rig, n, pose, cache, pivots)
         v = pose.get(n, {}).get("variant")
         if plan:
-            m = shift @ plan[n]["matrix"] @ riglib.world_matrix(rig, n, pose, cache)
+            m = shift @ plan[n]["matrix"] @ riglib.world_matrix(rig, n, pose, cache, pivots)
             v = v or plan[n]["variant"]
         if v:
             if (n, v) not in parts.variant_layer:
                 raise SystemExit("render: part %s has no variant '%s'" % (n, v))
             layer = parts.variant_layer[(n, v)]
-            synth = np.zeros((CH, CW), dtype=bool)
+            synth = parts.variant_synth.get((n, v), np.zeros((CH, CW), dtype=bool))
         else:
             layer, synth = parts.layer[n], parts.synth[n]
         layers.append((riglib.sample_nearest(layer, m, rig.cell),
@@ -127,10 +136,14 @@ def compose(rig: riglib.Rig, parts: Parts, pose: dict, offset=(0, 0), cull=True,
                     again = True
         if not again:
             break
+    if flash is not None:
+        # a one-frame colour flash (taking damage): every visible texel takes the flash colour.
+        # The colour must be one the sprite already uses; the palette gate checks it.
+        out[out[:, :, 3] > riglib.ALPHA_CUT, :3] = np.array(flash, dtype=np.uint8)
     return out, synth_vis, owner
 
 
-def ground_lock(rig: riglib.Rig, parts: Parts, pose: dict, squash=0.0):
+def ground_lock(rig: riglib.Rig, parts: Parts, pose: dict, squash=0.0, yaw=0.0):
     """Slide the whole frame vertically, in whole texels, so the lowest texel
     lands on the floor row.
 
@@ -144,7 +157,7 @@ def ground_lock(rig: riglib.Rig, parts: Parts, pose: dict, squash=0.0):
     if not rig.data.get("ground_lock", True):
         return (0, 0)
     floor = rig.cell[1] - 2
-    rgba, _, _ = compose(rig, parts, pose, squash=squash)
+    rgba, _, _ = compose(rig, parts, pose, squash=squash, yaw=yaw)
     rows = np.where((rgba[:, :, 3] > riglib.ALPHA_CUT).any(axis=1))[0]
     if not len(rows):
         return (0, 0)
@@ -162,10 +175,12 @@ def render_all(rig: riglib.Rig, parts: Parts):
         resolved = riglib.resolve_state(rig, state)
         for fr, rs in zip(state["frames"], resolved):
             pose, sq, yw = rs["pose"], rs["squash"], rs.get("yaw", 0.0)
-            off = (0, 0) if state["name"] in airborne else ground_lock(rig, parts, pose, sq)
-            rgba, synth, owner = compose(rig, parts, pose, off, squash=sq, yaw=yw)
+            pose = riglib.yaw_gain(pose, yw, state.get("yaw_gain"))
+            off = (0, 0) if state["name"] in airborne else ground_lock(rig, parts, pose, sq, yw)
+            fl = fr.get("flash")
+            rgba, synth, owner = compose(rig, parts, pose, off, squash=sq, yaw=yw, flash=fl)
             frames.append(dict(rgba=rgba, synth=synth, owner=owner, state=state["name"],
-                               pose=pose, squash=sq, offset=off,
+                               pose=pose, squash=sq, offset=off, yaw=yw, flash=fl,
                                ms=int(1000.0 / fps * int(fr.get("hold", 1)))))
         frames[first]["tag_from"] = first
         frames[-1]["tag_to"] = len(frames) - 1

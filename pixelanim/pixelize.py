@@ -417,7 +417,17 @@ def main():
         src = Image.open(args.source)
         ref = Image.open(args.texel_from or args.image)
         t = texel_size(ref, src)
-        sprite = pixelize(Image.open(args.image), src, t, preserve=args.preserve)
+        if args.height:
+            # force the height, whatever the generation drew: a rear 3/4 came out 47 rows tall
+            # against a 44-row front, which is invisible until a bob pushes it into the border
+            rgb0 = np.array(Image.open(args.image).convert("RGB"))
+            bx0, by0, bx1, by1 = figure_box(background_mask(rgb0))
+            t = (by1 - by0) / float(args.height)
+            print("forced %d texels tall = %.1f px per texel" % (args.height, t))
+        # the size is imposed, so only fine-tune it; the default +-5% search re-inflated a forced
+        # 44-row sprite back to 47
+        sprite = pixelize(Image.open(args.image), src, t, refine=0.01 if args.height else 0.05,
+                          preserve=args.preserve)
     print("texel estimate %.2f px -> refined %.2f px, result %dx%d"
           % (t, pixelize.last_texel, sprite.width, sprite.height))
     if args.out:

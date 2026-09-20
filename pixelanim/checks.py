@@ -71,6 +71,9 @@ def gate_palette(rig, parts, frames, args):
     ok_cols = set(map(tuple, src[:, :, :3][src[:, :, 3] > riglib.ALPHA_CUT].reshape(-1, 3)))
     for arr in parts.variant_layer.values():      # authored variant art is authored
         ok_cols |= set(map(tuple, arr[:, :, :3][arr[:, :, 3] > riglib.ALPHA_CUT].reshape(-1, 3)))
+    for fr in frames:                             # a declared flash colour is deliberate
+        if fr.get("flash") is not None:
+            ok_cols.add(tuple(int(v) for v in fr["flash"]))
     bad = {}
     for i, fr in enumerate(frames):
         a = alpha(fr)
@@ -96,10 +99,18 @@ def gate_holes(rig, parts, frames, args):
                   merely sealed at both ends. The art always looked like that;
                   only its connection to the outside changed. Reported, not failed.
     """
-    rest, _, _ = render.compose(rig, parts, {})
-    rest_a = rest[:, :, 3] > riglib.ALPHA_CUT
+    rests = {}
+
+    def rest_for(yaw):
+        # the rest silhouette of the *view* this frame is drawn from: a real 3/4 view has gaps
+        # between arm and body that the front does not, and those are not tears
+        if yaw not in rests:
+            r, _, _ = render.compose(rig, parts, {}, yaw=yaw)
+            rests[yaw] = r[:, :, 3] > riglib.ALPHA_CUT
+        return rests[yaw]
     worst, tears_total, neg_total = [], 0, 0
     for i, fr in enumerate(frames):
+        rest_a = rest_for(fr.get("yaw", 0.0))
         h = enclosed_holes(alpha(fr))
         # ground_lock may have slid the frame, so compare against a rest pose
         # slid the same way, or the shift alone would look like torn body
@@ -384,6 +395,43 @@ def gate_rotation(rig, parts, frames, args):
                   % (ruined, tracked, 100 * worst, 100 * limit)]
 
 
+def gate_facings(rig, parts, frames, args):
+    """The same animation at different facings must be the same size.
+
+    States named `<kind>_<yaw>` (walk_000, walk_045, ...) are one animation seen from different
+    sides. Frame k of each should have about the same height and stand on the same row; a facing
+    whose art was generated at a different scale is otherwise invisible to every other gate (it
+    caught rear-3/4 art 46 rows tall against a 44-row front, which then ran into the top border
+    whenever the torso bobbed). Fails when the height spread of a frame index across facings
+    exceeds `facing_height_tol` texels (default 2).
+    """
+    import re
+    tol = int(rig.data.get("facing_height_tol", 2))
+    groups = {}
+    for i, fr in enumerate(frames):
+        m = re.match(r"^(.*)_(\d{3})$", fr["state"])
+        if m:
+            groups.setdefault(m.group(1), {}).setdefault(m.group(2), []).append(i)
+    if not groups:
+        return True, ["no facing-suffixed states"]
+    bad, worst = [], 0
+    for kind, facings in groups.items():
+        n = min(len(v) for v in facings.values())
+        for k in range(n):
+            hs = {}
+            for yaw, idxs in facings.items():
+                rows = np.where(alpha(frames[idxs[k]]).any(axis=1))[0]
+                hs[yaw] = int(rows.max() - rows.min() + 1) if len(rows) else 0
+            spread = max(hs.values()) - min(hs.values())
+            worst = max(worst, spread)
+            if spread > tol:
+                lo = min(hs, key=hs.get); hi = max(hs, key=hs.get)
+                bad.append("%s frame %d: height %d at facing %s but %d at %s (spread %d, limit %d)"
+                           % (kind, k, hs[lo], lo, hs[hi], hi, spread, tol))
+    return not bad, bad[:10] or ["%d animations across facings, worst height spread %d texels (limit %d)"
+                                 % (len(groups), worst, tol)]
+
+
 def gate_volume(rig, parts, frames, args):
     """Squash and stretch must conserve volume. The matrix does by construction
     (sx = 1/sy); nearest-neighbour sampling then drops or duplicates whole rows
@@ -490,7 +538,7 @@ def gate_agree(rig, parts, frames, args):
 
 GATES = [("rest", gate_rest), ("palette", gate_palette), ("holes", gate_holes),
          ("floaters", gate_floaters), ("border", gate_border), ("wholetexel", gate_wholetexel), ("ground", gate_ground),
-         ("distinct", gate_distinct), ("synth", gate_synth), ("volume", gate_volume), ("rotation", gate_rotation), ("variant", gate_variant),
+         ("distinct", gate_distinct), ("synth", gate_synth), ("volume", gate_volume), ("facings", gate_facings), ("rotation", gate_rotation), ("variant", gate_variant),
          ("lag", gate_lag), ("agree", gate_agree)]
 
 

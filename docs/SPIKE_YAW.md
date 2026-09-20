@@ -119,3 +119,38 @@ view, not the front. Defect logged.
 five drawn views); the rear 3/4 and its mirror have fragmentary legs and a floating foot from the generated
 art; the far leg hidden behind the shield in a 3/4 view is missing in that view; nothing here has a Lua
 mirror, so `agree` does not apply.
+
+
+## Update: the walk at eight facings (G1, G2, G7)
+
+`rig_walkturn.json` (from `make_walk_turn.py`): the authored four-frame walk at facings 0, 45, ..., 315,
+32 frames, using the per-view part art.
+
+- **G1, per-view pivots** (`derive_pivots.py` -> `views/pivots.json`, `world_matrix(..., pivots=)`, the
+  `pivot` in `yaw_plan`): a joint is where a part's texels meet its parent's, at the contact point nearest
+  the parent's centre (the centroid of a long contact put the profile hip 5 rows too low). Compared with
+  the front-view pivots on the profile walk, legs stay attached at the hip. Counting detached pieces, the
+  improvement is real but small (a profile frame goes 2 pieces -> 1, another 4 -> 3) and the number of
+  small floating fragments barely moves (9 -> 8): most of those come from the generated leg art, not the
+  joints.
+- **G2, view-dependent swing** (`yaw_gain` on a state, `riglib.yaw_gain`): the leg swing is multiplied by
+  lerp(1.0, 2.5, |sin yaw|), so the authored +-10 degrees becomes +-25 in profile. A mirrored view mirrors
+  the swing by itself, so the sign is left alone. Scissors, as predicted, without a knee bend.
+- **G7, facing-aware gates:** `holes` compares each frame against the rest silhouette of its own view
+  (fixes open defect #17), `palette` allows a declared flash colour, and a new `facings` gate compares
+  frame k across the facings of one animation (`<kind>_<yaw>` states).
+
+**Three findings that only showed up by rendering:**
+1. The rear 3/4 art was 46 rows tall against 44 for the rest. Invisible until the torso bob pushed it into
+   the top border; `facings` now catches it. Fixed at source: `pixelize.py --height`, and the default +-5%
+   texel search had to be tightened when a height is forced (it re-inflated 44 rows back to 47).
+2. **View art had no underlap.** The front sprite has extra texels tucked under neighbouring parts, derived
+   from the rig's pose list; the views were exported as own-texels-only, so any relative motion between
+   parts (a torso bob) opened a gap at every non-front facing (up to 7 texels in the profile).
+   `segment_views.py` now runs each view through the same derivation and exports the extended layer plus a
+   synth mask (`<view>_<part>.synth.png`), which `Parts` loads so stray patches can still be culled.
+   Gates went from 12 failing frames to 4.
+3. Rendering both pivot variants into the same strip file silently overwrote the first.
+
+**Left:** 4 one-texel tears at the neck seam of the mirrored views; stray foot fragments in the profile
+(generated art, defect G9); no knee bend (G3).

@@ -107,7 +107,7 @@ def view_rig(name, seeds):
     base = json.loads((HERE / "rig.json").read_text(encoding="utf-8"))
     rig = {"name": "view_" + name, "source": str((HERE / "views" / ("reg_%s.png" % name)).as_posix()),
            "parts_file": "out/_v.aseprite", "anim_file": "out/_v_anim.aseprite", "strip_file": "out/_v.png",
-           "cell": [48, 48], "underlap": 0, "symmetry_x": AXIS, "parts": [], "states": []}
+           "cell": [48, 48], "underlap": 4, "symmetry_x": AXIS, "parts": [], "states": base["states"]}
     for p in base["parts"]:
         q = {k: v for k, v in p.items() if k in ("name", "rect", "pivot", "parent")}
         q["seeds"] = seeds[p["name"]]
@@ -130,10 +130,10 @@ def main(names):
         path.write_text(json.dumps(rigd, indent=1), encoding="utf-8")
         rig = riglib.load_rig(path)
         try:
-            res = segment.segment(rig, 0, 6.0, "mirror", "none", None, quiet=True)
+            res = segment.segment(rig, 4, 6.0, "mirror", "none", None, quiet=True)
             note = "ok"
         except SystemExit as e:
-            res = segment.segment(rig, 0, 6.0, "mirror", "none", None, quiet=True, allow_bad_seeds=True)
+            res = segment.segment(rig, 4, 6.0, "mirror", "none", None, quiet=True, allow_bad_seeds=True)
             note = "SEED PROBLEMS: " + str(e).splitlines()[1] if len(str(e).splitlines()) > 1 else str(e)
         lab, idx = res["lab"], res["idx"]
         counts = {p: int((lab == idx[p]).sum()) for p in PARTS}
@@ -151,12 +151,15 @@ def main(names):
             for sx, sy in seeds[p]:
                 d.ellipse([sx * S + 2, sy * S + 2, sx * S + S - 3, sy * S + S - 3], outline=(0, 0, 0), width=2)
         img.save(ROOT / "data/diffusion" / ("skel_labels_%s.png" % name))
-        # per-part own-texel art
+        # per-part art: the part's own texels PLUS the underlap segment.py derives from the rig's
+        # pose list (so a bobbing torso finds something under it), and the mask of which texels
+        # were invented, so the renderer can still cull a stray patch of them
         for p in PARTS:
-            out = np.zeros((48, 48, 4), dtype=np.uint8)
-            m = (lab == idx[p]) & (rgba[:, :, 3] > 127)
-            out[m] = rgba[m]
-            Image.fromarray(out, "RGBA").save(HERE / "views" / ("%s_%s.png" % (name, p)))
+            layer = res["layers"][p].copy()
+            Image.fromarray(layer, "RGBA").save(HERE / "views" / ("%s_%s.png" % (name, p)))
+            sm = np.zeros((48, 48, 4), dtype=np.uint8)
+            sm[res["synths"][p]] = (255, 255, 255, 255)
+            Image.fromarray(sm, "RGBA").save(HERE / "views" / ("%s_%s.synth.png" % (name, p)))
 
 
 if __name__ == "__main__":
