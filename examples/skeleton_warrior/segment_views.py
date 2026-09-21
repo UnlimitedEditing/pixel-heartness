@@ -144,7 +144,7 @@ def view_rig(name, seeds, pivots=None, underlap=4):
            "parts_file": "out/_v.aseprite", "anim_file": "out/_v_anim.aseprite", "strip_file": "out/_v.png",
            "cell": [48, 48], "underlap": underlap, "symmetry_x": AXIS, "parts": [], "states": UNDER}
     for p in base["parts"]:
-        q = {k: v for k, v in p.items() if k in ("name", "rect", "pivot", "parent")}
+        q = {k: v for k, v in p.items() if k in ("name", "rect", "pivot", "parent", "mirror_of")}
         q["seeds"] = seeds[p["name"]]
         if pivots:
             q["pivot"] = [round(v, 3) for v in pivots[p["name"]]]
@@ -173,13 +173,13 @@ def main(names):
         pivs = pivots_from_lab(res0["lab"], res0["idx"], base_parts)
         ALL_PIVOTS[name] = pivs
         # pass 2: cut again with those joints, so the underlap is sized for the pivots the renderer will use
-        path.write_text(json.dumps(view_rig(name, seeds, pivs, 4), indent=1), encoding="utf-8")
+        path.write_text(json.dumps(view_rig(name, seeds, pivs, 8), indent=1), encoding="utf-8")
         rig = riglib.load_rig(path)
         try:
-            res = segment.segment(rig, 4, 6.0, "mirror", "none", None, quiet=True)
+            res = segment.segment(rig, 8, 6.0, "mirror", "none", None, quiet=True)
             note = "ok"
         except SystemExit as e:
-            res = segment.segment(rig, 4, 6.0, "mirror", "none", None, quiet=True, allow_bad_seeds=True)
+            res = segment.segment(rig, 8, 6.0, "mirror", "none", None, quiet=True, allow_bad_seeds=True)
             note = "SEED PROBLEMS: " + str(e).splitlines()[1] if len(str(e).splitlines()) > 1 else str(e)
         lab, idx = res["lab"], res["idx"]
         counts = {p: int((lab == idx[p]).sum()) for p in PARTS}

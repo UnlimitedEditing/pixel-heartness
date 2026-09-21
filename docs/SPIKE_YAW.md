@@ -167,3 +167,26 @@ pivots. New in the gates: `facings`, thickness-based `holes`, yaw-aware `volume`
 the worst-case poses of every state, written by `make_full_set.py`).
 
 Not merged to `main`: this is a spike branch with no Lua mirror.
+
+## Update: the shoulder-seam cracks (defect #18), what worked and what did not
+
+Diagnosis by looking, not theory: at 225 and 315 degrees the cracks are *inside the ribcage*, beside the glove and below
+the shield's inner edge, appearing in frames whose pose is tiny (`idle`: arms 3-6 degrees). In a patched-mirror view the
+torso half that the shield hid in the original is missing, and it lands under the (unmirrored) sword arm; at rest the arm
+covers it, and any arm motion uncovers texels that were never drawn.
+
+| attempt | frames with a crack / crack texels |
+|---|---|
+| baseline (underlap sized for the old poses) | 67 / 209 |
+| underlap sized for the worst-case poses of every state | 65 -> 63 |
+| underlap derived with the view's own pivots | 67 |
+| `mirror_of` restored in the view rigs (the front rig has it; my copy dropped it) | 70 / 209 |
+| underlap also sized for the *other* arm's motion (poses with the arms swapped) | 67 / 183 |
+| underlap cap 4 -> 8 | 59 / 149 |
+| cap 8 -> 14 | 60 / 151, and a floater appears |
+| conjugated FK for handed parts (arm follows the *mirrored* torso) | 59 / 149 vs 54 / 125 without it: **worse, reverted** |
+| final (plain FK, `mirror_of`, swapped-arm poses, cap 8) | 54 / 125 |
+
+A theory I liked (a 16 degree disagreement between the mirrored torso and the unmirrored arm) was measured and was wrong.
+What remains is concentrated at 225 and 315 (12 and 13 frames). The honest fix is art: author the mirrored views' torso
+half, or accept a small tolerance for those facings.

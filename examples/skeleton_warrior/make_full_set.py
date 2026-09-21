@@ -124,6 +124,19 @@ for st in STATES:
                     pose[part][key] = pose[part][key] * max(mf, ms)
         fr.append({"pose": pose})
     under.append({"name": st["name"], "fps": st["fps"], "loop": st["loop"], "frames": fr})
+    # In a patched-mirror view the torso texels that sat under the shield end up under the sword arm
+    # (and the other way round), so the underlap under each arm must be sized for the *other* arm's
+    # motion too. Add a copy of every pose with the two arms' motions swapped.
+    sw = []
+    for f in fr:
+        p2 = {k: dict(v) for k, v in f["pose"].items()}
+        a, b = p2.pop("arm_weapon", None), p2.pop("arm_shield", None)
+        if a is not None:
+            p2["arm_shield"] = a
+        if b is not None:
+            p2["arm_weapon"] = b
+        sw.append({"pose": p2})
+    under.append({"name": st["name"] + "_swapped", "fps": st["fps"], "loop": st["loop"], "frames": sw})
 (HERE / "views" / "underlap_states.json").write_text(json.dumps(under), encoding="utf-8")
 (HERE / "rig_fullset.json").write_text(json.dumps(base, indent=2), encoding="utf-8")
 (HERE / "fullset_manifest.json").write_text(json.dumps({

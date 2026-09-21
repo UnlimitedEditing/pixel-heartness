@@ -8,7 +8,7 @@
   48,
   48
  ],
- "underlap": 4,
+ "underlap": 8,
  "symmetry_x": 24.5,
  "parts": [
   {
@@ -48,6 +48,7 @@
     32.0
    ],
    "parent": "pelvis",
+   "mirror_of": "leg_r",
    "seeds": [
     [
      21,
@@ -72,6 +73,7 @@
     28.605
    ],
    "parent": null,
+   "mirror_of": "pelvis",
    "seeds": [
     [
      24,
@@ -96,6 +98,7 @@
     24.5
    ],
    "parent": "pelvis",
+   "mirror_of": "torso",
    "seeds": [
     [
      23,
@@ -168,6 +171,7 @@
     19.75
    ],
    "parent": "torso",
+   "mirror_of": "arm_weapon",
    "seeds": [
     [
      21,
@@ -263,6 +267,55 @@
    ]
   },
   {
+   "name": "idle_swapped",
+   "fps": 6,
+   "loop": true,
+   "frames": [
+    {
+     "pose": {}
+    },
+    {
+     "pose": {
+      "torso": {
+       "dy": -1
+      },
+      "arm_shield": {
+       "rot": 3
+      },
+      "arm_weapon": {
+       "rot": 3
+      }
+     }
+    },
+    {
+     "pose": {
+      "torso": {
+       "dy": -1
+      },
+      "head": {
+       "dy": -1
+      },
+      "arm_shield": {
+       "rot": 6
+      },
+      "arm_weapon": {
+       "rot": 6
+      }
+     }
+    },
+    {
+     "pose": {
+      "arm_shield": {
+       "rot": 3
+      },
+      "arm_weapon": {
+       "rot": 3
+      }
+     }
+    }
+   ]
+  },
+  {
    "name": "idle_b",
    "fps": 4,
    "loop": true,
@@ -304,7 +357,101 @@
    ]
   },
   {
+   "name": "idle_b_swapped",
+   "fps": 4,
+   "loop": true,
+   "frames": [
+    {
+     "pose": {
+      "head": {
+       "rot": -8
+      }
+     }
+    },
+    {
+     "pose": {
+      "head": {
+       "rot": -8
+      },
+      "arm_weapon": {
+       "rot": 2
+      }
+     }
+    },
+    {
+     "pose": {
+      "head": {
+       "rot": 8
+      }
+     }
+    },
+    {
+     "pose": {
+      "head": {
+       "rot": 8
+      },
+      "arm_weapon": {
+       "rot": 2
+      }
+     }
+    }
+   ]
+  },
+  {
    "name": "walk",
+   "fps": 8,
+   "loop": true,
+   "frames": [
+    {
+     "pose": {
+      "leg_l": {
+       "rot": -25.0
+      },
+      "leg_r": {
+       "rot": 25.0
+      }
+     }
+    },
+    {
+     "pose": {
+      "torso": {
+       "dy": -1
+      },
+      "leg_l": {
+       "rot": 0.0
+      },
+      "leg_r": {
+       "rot": 0.0
+      }
+     }
+    },
+    {
+     "pose": {
+      "leg_l": {
+       "rot": 25.0
+      },
+      "leg_r": {
+       "rot": -25.0
+      }
+     }
+    },
+    {
+     "pose": {
+      "torso": {
+       "dy": -1
+      },
+      "leg_l": {
+       "rot": 0.0
+      },
+      "leg_r": {
+       "rot": 0.0
+      }
+     }
+    }
+   ]
+  },
+  {
+   "name": "walk_swapped",
    "fps": 8,
    "loop": true,
    "frames": [
@@ -394,6 +541,43 @@
    ]
   },
   {
+   "name": "alert_swapped",
+   "fps": 4,
+   "loop": true,
+   "frames": [
+    {
+     "pose": {
+      "head": {
+       "rot": -6
+      },
+      "torso": {
+       "rot": -2
+      },
+      "arm_shield": {
+       "rot": -8
+      }
+     }
+    },
+    {
+     "pose": {
+      "head": {
+       "rot": -6,
+       "dy": -1
+      },
+      "torso": {
+       "rot": -3
+      },
+      "arm_shield": {
+       "rot": -12
+      },
+      "arm_weapon": {
+       "rot": -4
+      }
+     }
+    }
+   ]
+  },
+  {
    "name": "hostile",
    "fps": 6,
    "loop": true,
@@ -448,6 +632,67 @@
        "dy": -1
       },
       "arm_shield": {
+       "rot": -6
+      }
+     }
+    }
+   ]
+  },
+  {
+   "name": "hostile_swapped",
+   "fps": 6,
+   "loop": true,
+   "frames": [
+    {
+     "pose": {
+      "torso": {
+       "rot": 3
+      },
+      "arm_shield": {
+       "rot": -24
+      },
+      "arm_weapon": {
+       "rot": -6
+      }
+     }
+    },
+    {
+     "pose": {
+      "torso": {
+       "rot": 3,
+       "dy": -1
+      },
+      "arm_shield": {
+       "rot": -28
+      },
+      "arm_weapon": {
+       "rot": -6
+      }
+     }
+    },
+    {
+     "pose": {
+      "torso": {
+       "rot": 4
+      },
+      "arm_shield": {
+       "rot": -24
+      },
+      "arm_weapon": {
+       "rot": -8
+      }
+     }
+    },
+    {
+     "pose": {
+      "torso": {
+       "rot": 3,
+       "dy": -1
+      },
+      "arm_shield": {
+       "rot": -20
+      },
+      "arm_weapon": {
        "rot": -6
       }
      }
@@ -576,6 +821,127 @@
    ]
   },
   {
+   "name": "attack_a_swapped",
+   "fps": 20,
+   "loop": false,
+   "frames": [
+    {
+     "pose": {
+      "arm_shield": {
+       "rot": -20.8
+      }
+     }
+    },
+    {
+     "pose": {
+      "torso": {
+       "rot": -3
+      },
+      "arm_shield": {
+       "rot": -39.0
+      }
+     }
+    },
+    {
+     "pose": {
+      "torso": {
+       "rot": -6
+      },
+      "arm_shield": {
+       "rot": -59.800000000000004
+      },
+      "arm_weapon": {
+       "rot": -8
+      }
+     }
+    },
+    {
+     "pose": {
+      "torso": {
+       "rot": -9
+      },
+      "head": {
+       "rot": -4
+      },
+      "arm_shield": {
+       "rot": -80.60000000000001
+      },
+      "arm_weapon": {
+       "rot": -12
+      }
+     }
+    },
+    {
+     "pose": {
+      "torso": {
+       "rot": 2,
+       "dx": 1
+      },
+      "arm_shield": {
+       "rot": -26.0
+      },
+      "arm_weapon": {
+       "rot": -4
+      }
+     }
+    },
+    {
+     "pose": {
+      "torso": {
+       "rot": 10,
+       "dx": 2
+      },
+      "head": {
+       "rot": 6
+      },
+      "arm_shield": {
+       "rot": 44.2
+      },
+      "arm_weapon": {
+       "rot": 6
+      }
+     }
+    },
+    {
+     "pose": {
+      "torso": {
+       "rot": 8,
+       "dx": 1
+      },
+      "head": {
+       "rot": 4
+      },
+      "arm_shield": {
+       "rot": 57.2
+      },
+      "arm_weapon": {
+       "rot": 4
+      }
+     }
+    },
+    {
+     "pose": {
+      "torso": {
+       "rot": 4
+      },
+      "arm_shield": {
+       "rot": 28.6
+      }
+     }
+    },
+    {
+     "pose": {
+      "torso": {
+       "rot": 1
+      },
+      "arm_shield": {
+       "rot": 10.4
+      }
+     }
+    }
+   ]
+  },
+  {
    "name": "attack_b",
    "fps": 12,
    "loop": false,
@@ -620,6 +986,50 @@
    ]
   },
   {
+   "name": "attack_b_swapped",
+   "fps": 12,
+   "loop": false,
+   "frames": [
+    {
+     "pose": {
+      "torso": {
+       "rot": -6
+      },
+      "shield": {
+       "rot": -6
+      },
+      "arm_weapon": {
+       "rot": -20
+      }
+     }
+    },
+    {
+     "pose": {
+      "torso": {
+       "rot": 8,
+       "dx": 2
+      },
+      "shield": {
+       "dx": 2
+      },
+      "arm_weapon": {
+       "rot": 22
+      }
+     }
+    },
+    {
+     "pose": {
+      "torso": {
+       "rot": 3
+      },
+      "arm_weapon": {
+       "rot": 10
+      }
+     }
+    }
+   ]
+  },
+  {
    "name": "damage",
    "fps": 12,
    "loop": false,
@@ -633,6 +1043,43 @@
        "rot": -8
       },
       "arm_weapon": {
+       "rot": 10
+      }
+     }
+    },
+    {
+     "pose": {
+      "torso": {
+       "rot": -6
+      },
+      "head": {
+       "rot": -6
+      }
+     }
+    },
+    {
+     "pose": {
+      "torso": {
+       "rot": -2
+      }
+     }
+    }
+   ]
+  },
+  {
+   "name": "damage_swapped",
+   "fps": 12,
+   "loop": false,
+   "frames": [
+    {
+     "pose": {
+      "torso": {
+       "rot": -8
+      },
+      "head": {
+       "rot": -8
+      },
+      "arm_shield": {
        "rot": 10
       }
      }
