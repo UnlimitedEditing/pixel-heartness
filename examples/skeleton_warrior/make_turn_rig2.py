@@ -12,7 +12,7 @@ import json
 from pathlib import Path
 
 HERE = Path(__file__).parent
-r = json.loads((HERE / "rig.json").read_text(encoding="utf-8"))
+r = json.loads((HERE / "rig_2bone.json").read_text(encoding="utf-8"))
 r["name"] = "skeleton_turn2"
 r["parts_file"] = "out/turn2_parts.aseprite"
 r["anim_file"] = "out/turn2_anim.aseprite"

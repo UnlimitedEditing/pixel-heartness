@@ -67,7 +67,7 @@ Everything below is on `spike-yaw`; `main` is untouched by it. Full detail in `d
 |---|---|---|
 | G1 | per-view pivots | **done** (spike). Derived from each view's own segmentation; used by FK and by the underlap derivation |
 | G2 | view-dependent motion | **done for legs and the sword arm** via `yaw_gain` (lerp of two multipliers by |sin yaw|). Scissor-like in profile, no knee bend. Other limbs not tuned |
-| G3 | variants for what one-bone parts cannot do | **not started.** No knee variants, no jaw, no pain face. The generated side frames have the bent knees but were not used |
+| G3 | variants for what one-bone parts cannot do | **legs done, the rest not.** Each leg is now a thigh and a shin hinged at the knee (`make_2bone_rig.py`, `rig_2bone.json`; nothing redrawn, the shin is the leg texels below row 38), and the walk bends a knee: `leg_*_low` rotates 0.3x at the front, 1.8x in profile. Closes open defect #10 for this skeleton. No jaw, no pain face, no head-turn variants |
 | G4 | the states themselves | **done for the skeleton except talk**: idle, idle_b, walk, alert, hostile, attack_a (sword), attack_b (shield bash), damage, at 8 facings = 33 frames per facing, 264 in all. Poses are authored by me and unreviewed for taste |
 | G5 | flash primitive | **done**: `flash: [r,g,b]` on a frame, renderer sets every visible texel to it, the palette gate accepts a declared colour. Only the shield's orange-red is used; a white flash needs a white in the palette |
 | G6 | state schema / manifest | **partly**: `fullset_manifest.json` maps every (state, facing) to its frame range, fps, loop, holds, and an attack's commit frame, and groups states by kind. No transitions, no interruption rules |
@@ -93,3 +93,20 @@ the two GIFs (`skeleton_walk_8facings.gif`, `skeleton_attack_8facings.gif`), the
   own pivots). Both are kept because they are correct, but they are not what is causing the cracks.
 - Per-view pivots reduced detached pieces modestly, and the floating foot fragments in profile come from the
   generated leg art.
+
+
+### Update, second session (still on `spike-yaw`)
+
+**G3 legs.** Two-bone legs, front rig unchanged at rest (rest gate bit-identical), carried through the four views (shin seeds at
+85-95% of body height, thigh 68-74%). The profile walk now has a real stride with the lifted shin trailing behind the knee.
+
+**Cracks (defect #18), final numbers:** 77 of 264 frames report a thin crack (213 texels), from 67 (209) at the start of the
+session; 113 (429) at the worst point. The full attempt table is in `SPIKE_YAW.md`. What helped: restoring `mirror_of` in the view
+rigs, sizing underlap for the *other* arm's motion, a cap of 8. What did not: a conjugated-FK theory (worse, reverted), a
+cap of 14, and restricting a leg's underlap to the pelvis (much worse).
+
+**A trade-off I chose:** a thigh's underlap under the sword arm's glove in profile showed as a vertical strip beside the glove
+(a visible floater in `idle_090`). Excluding only the sword arm (`under_only` on the leg parts, new in `segment.py`) removes the
+strip but leaves 17 cracks per profile facing instead of 5. I took the version with no visible stray artefact.
+
+**Gates, full set:** holes fails (thin cracks); everything else passes; `agree` skipped. Main rigs 15 of 15.

@@ -21,18 +21,66 @@
    ],
    "pivot": [
     28.5,
-    31.5
+    29.0
    ],
    "parent": "pelvis",
    "seeds": [
     [
      28,
-     36
+     32
+    ],
+    [
+     28,
+     34
+    ]
+   ],
+   "underlap": 4,
+   "under_only": [
+    "pelvis",
+    "torso",
+    "head",
+    "leg_r",
+    "leg_l",
+    "leg_r_low",
+    "leg_l_low",
+    "arm_shield",
+    "shield"
+   ]
+  },
+  {
+   "name": "leg_r_low",
+   "rect": [
+    27,
+    38,
+    10,
+    10
+   ],
+   "pivot": [
+    29.5,
+    36.5
+   ],
+   "parent": "leg_r",
+   "seeds": [
+    [
+     29,
+     39
     ],
     [
      27,
-     42
+     43
     ]
+   ],
+   "underlap": 4,
+   "under_only": [
+    "pelvis",
+    "torso",
+    "head",
+    "leg_r",
+    "leg_l",
+    "leg_r_low",
+    "leg_l_low",
+    "arm_shield",
+    "shield"
    ]
   },
   {
@@ -45,19 +93,68 @@
    ],
    "pivot": [
     21.5,
-    32.5
+    29.0
    ],
    "parent": "pelvis",
    "mirror_of": "leg_r",
    "seeds": [
     [
      21,
-     36
+     32
     ],
     [
      21,
-     42
+     33
     ]
+   ],
+   "underlap": 4,
+   "under_only": [
+    "pelvis",
+    "torso",
+    "head",
+    "leg_r",
+    "leg_l",
+    "leg_r_low",
+    "leg_l_low",
+    "arm_shield",
+    "shield"
+   ]
+  },
+  {
+   "name": "leg_l_low",
+   "rect": [
+    15,
+    38,
+    9,
+    10
+   ],
+   "pivot": [
+    21.5,
+    36.5
+   ],
+   "parent": "leg_l",
+   "mirror_of": "leg_r_low",
+   "seeds": [
+    [
+     21,
+     39
+    ],
+    [
+     21,
+     43
+    ]
+   ],
+   "underlap": 4,
+   "under_only": [
+    "pelvis",
+    "torso",
+    "head",
+    "leg_r",
+    "leg_l",
+    "leg_r_low",
+    "leg_l_low",
+    "arm_shield",
+    "shield"
    ]
   },
   {
@@ -69,8 +166,8 @@
     8
    ],
    "pivot": [
-    24.881,
-    28.595
+    24.882,
+    28.265
    ],
    "parent": null,
    "mirror_of": "pelvis",
@@ -418,10 +515,13 @@
        "dy": -1
       },
       "leg_l": {
-       "rot": 0.0
+       "rot": 10.0
       },
       "leg_r": {
        "rot": 0.0
+      },
+      "leg_l_low": {
+       "rot": -25.2
       }
      }
     },
@@ -444,7 +544,10 @@
        "rot": 0.0
       },
       "leg_r": {
-       "rot": 0.0
+       "rot": 10.0
+      },
+      "leg_r_low": {
+       "rot": -25.2
       }
      }
     }
@@ -471,10 +574,13 @@
        "dy": -1
       },
       "leg_l": {
-       "rot": 0.0
+       "rot": 10.0
       },
       "leg_r": {
        "rot": 0.0
+      },
+      "leg_l_low": {
+       "rot": -25.2
       }
      }
     },
@@ -497,7 +603,10 @@
        "rot": 0.0
       },
       "leg_r": {
-       "rot": 0.0
+       "rot": 10.0
+      },
+      "leg_r_low": {
+       "rot": -25.2
       }
      }
     }

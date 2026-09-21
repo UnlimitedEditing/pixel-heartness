@@ -190,3 +190,13 @@ covers it, and any arm motion uncovers texels that were never drawn.
 A theory I liked (a 16 degree disagreement between the mirrored torso and the unmirrored arm) was measured and was wrong.
 What remains is concentrated at 225 and 315 (12 and 13 frames). The honest fix is art: author the mirrored views' torso
 half, or accept a small tolerance for those facings.
+
+
+## Update: two-bone legs (G3) and the underlap trade-off
+
+`make_2bone_rig.py` splits each leg at the knee into a thigh and a shin. The views get shin seeds; the walk gets a knee bend
+(`WALK_2BONE` in `make_full_set.py`). New `segment.py` option `under_only` (a list of the parts a part may tuck under).
+
+Two things tried and rejected while doing it: restricting each thigh's underlap to the pelvis (cracks 53 -> 113 frames, the
+hip lost its cover) and to "everything but arms and shield" (113 -> 113: the shield is what hides the far leg in profile).
+Excluding only the sword arm gives 77 frames and no visible stray strip beside the glove.

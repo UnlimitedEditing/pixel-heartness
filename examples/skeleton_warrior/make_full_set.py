@@ -30,7 +30,17 @@ def P(**kw):
     return kw
 
 
-LEG_SWING = {"leg_l": {"rot": [1.0, 2.5]}, "leg_r": {"rot": [1.0, 2.5]}}
+LEG_SWING = {"leg_l": {"rot": [1.0, 2.5]}, "leg_r": {"rot": [1.0, 2.5]},
+             "leg_l_low": {"rot": [0.3, 1.8]}, "leg_r_low": {"rot": [0.3, 1.8]}}
+# The walk with knees. A shin turned negative kicks the foot back (toward +x, the trailing side of a
+# leg swinging forward when facing left); at the front the multiplier is small because the bend is
+# foreshortening, in profile it is 1.8x. The leg that swings through (passing pose) is the one that bends.
+WALK_2BONE = [
+    {"pose": {"leg_l": {"rot": -10}, "leg_r": {"rot": 10}}},
+    {"pose": {"torso": {"dy": -1}, "leg_l": {"rot": 4}, "leg_r": {"rot": 0}, "leg_l_low": {"rot": -14}}},
+    {"pose": {"leg_l": {"rot": 10}, "leg_r": {"rot": -10}}},
+    {"pose": {"torso": {"dy": -1}, "leg_l": {"rot": 0}, "leg_r": {"rot": 4}, "leg_r_low": {"rot": -14}}},
+]
 ARM_ARC = {"arm_weapon": {"rot": [1.0, 1.3]}}
 
 FLASH = [209, 76, 36]          # a colour the sprite already uses (the shield's orange-red)
@@ -58,7 +68,7 @@ STATES = [
         {"pose": {"head": {"rot": -8}, "arm_shield": {"rot": 2}}},
         {"pose": {"head": {"rot": 8}}},
         {"pose": {"head": {"rot": 8}, "arm_shield": {"rot": 2}}}]),
-    dict(name="walk", kind="walk", fps=8, loop=True, frames=S["walk"]["frames"], yaw_gain=LEG_SWING),
+    dict(name="walk", kind="walk", fps=8, loop=True, frames=WALK_2BONE, yaw_gain=LEG_SWING),
     dict(name="alert", kind="alert", fps=4, loop=True, frames=[
         {"pose": {"head": {"rot": -6}, "torso": {"rot": -2}, "arm_weapon": {"rot": -8}}},
         {"pose": {"head": {"rot": -6, "dy": -1}, "torso": {"rot": -3}, "arm_weapon": {"rot": -12},

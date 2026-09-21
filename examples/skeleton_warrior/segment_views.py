@@ -31,7 +31,7 @@ import mirrorpatch as mp   # noqa: E402
 RED = mp.SHIELD_COLOURS
 _u = HERE / "views" / "underlap_states.json"
 UNDER = json.loads(_u.read_text(encoding="utf-8")) if _u.exists() else []   # written by make_full_set.py
-PARTS = ["leg_r", "leg_l", "pelvis", "torso", "head", "arm_weapon", "arm_shield", "shield"]
+PARTS = ["leg_r", "leg_r_low", "leg_l", "leg_l_low", "pelvis", "torso", "head", "arm_weapon", "arm_shield", "shield"]
 AXIS = 24.5
 
 
@@ -92,10 +92,14 @@ def propose(rgba):
     py = y0 + int(0.60 * H)
     add("pelvis", nearest(body, AXIS, py, taken))
     add("pelvis", nearest(body, AXIS, py + 2, taken))
-    for frac in (0.78, 0.92):
+    for frac in (0.68, 0.74):                                 # thigh
         ly = y0 + int(frac * H)
         add("leg_r", nearest(body, AXIS + 3, ly, taken))
         add("leg_l", nearest(body, AXIS - 3, ly, taken))
+    for frac in (0.85, 0.95):                                 # shin
+        ly = y0 + int(frac * H)
+        add("leg_r_low", nearest(body, AXIS + 3, ly, taken))
+        add("leg_l_low", nearest(body, AXIS - 3, ly, taken))
     if order:                                             # the shield arm, hidden: near the shield's top
         add("arm_shield", nearest(body, sx1 if sx1 < AXIS else sx0, sy0 + 1, taken))
     if not seeds["arm_weapon"]:
@@ -139,7 +143,7 @@ def pivots_from_lab(lab, idx, base_parts):
 
 
 def view_rig(name, seeds, pivots=None, underlap=4):
-    base = json.loads((HERE / "rig.json").read_text(encoding="utf-8"))
+    base = json.loads((HERE / "rig_2bone.json").read_text(encoding="utf-8"))
     rig = {"name": "view_" + name, "source": str((HERE / "views" / ("reg_%s.png" % name)).as_posix()),
            "parts_file": "out/_v.aseprite", "anim_file": "out/_v_anim.aseprite", "strip_file": "out/_v.png",
            "cell": [48, 48], "underlap": underlap, "symmetry_x": AXIS, "parts": [], "states": UNDER}
@@ -148,11 +152,19 @@ def view_rig(name, seeds, pivots=None, underlap=4):
         q["seeds"] = seeds[p["name"]]
         if pivots:
             q["pivot"] = [round(v, 3) for v in pivots[p["name"]]]
+        if p["name"].startswith("leg"):
+            q["underlap"] = 4
+            # a leg may tuck under anything except the sword arm (the shield hides the far leg in profile, so it is needed). With the
+            # general rule a thigh's underlap grew under the glove that hangs in front of the hip in profile
+            # and showed as a vertical strip beside it. (Restricting it to the pelvis alone was worse: cracks
+            # went from 53 to 113 frames, because the hip and knee lost the cover they need.)
+            q["under_only"] = ["pelvis", "torso", "head", "leg_r", "leg_l", "leg_r_low", "leg_l_low",
+                               "arm_shield", "shield"]                                    # everything but the sword arm
         rig["parts"].append(q)
     return rig
 
 
-PALETTE = {"leg_r": (230, 90, 90), "leg_l": (90, 150, 230), "pelvis": (230, 190, 60), "torso": (110, 200, 120),
+PALETTE = {"leg_r": (230, 90, 90), "leg_r_low": (245, 160, 160), "leg_l": (90, 150, 230), "leg_l_low": (150, 195, 245), "pelvis": (230, 190, 60), "torso": (110, 200, 120),
            "head": (230, 230, 230), "arm_weapon": (230, 120, 200), "arm_shield": (150, 110, 230),
            "shield": (230, 140, 50)}
 
@@ -165,7 +177,7 @@ def main(names):
     for name in names:
         rgba = np.array(Image.open(HERE / "views" / ("reg_%s.png" % name)).convert("RGBA"))
         seeds, info = propose(rgba)
-        base_parts = json.loads((HERE / "rig.json").read_text(encoding="utf-8"))["parts"]
+        base_parts = json.loads((HERE / "rig_2bone.json").read_text(encoding="utf-8"))["parts"]
         path = HERE / "views" / ("_rig_%s.json" % name)
         # pass 1: cut the view with no underlap, only to find where its joints are
         path.write_text(json.dumps(view_rig(name, seeds, None, 0), indent=1), encoding="utf-8")

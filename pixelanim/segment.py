@@ -268,8 +268,9 @@ def build_extents(rig, lab, idx, opaque, underlap, policy_default, axis_x):
         policy = p.get("extend_outside", policy_default)
 
         infront = np.zeros_like(opaque)
+        only = p.get("under_only")          # optional: the parts this one may tuck under, and no others
         for q in rig.parts:
-            if rig.z[q["name"]] > rig.z[n]:
+            if rig.z[q["name"]] > rig.z[n] and (only is None or q["name"] in only):
                 infront |= lab == idx[q["name"]]
 
         if policy == "free":
