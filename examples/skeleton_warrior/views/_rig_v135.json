@@ -20,8 +20,8 @@
     18
    ],
    "pivot": [
-    31,
-    31
+    28.5,
+    31.5
    ],
    "parent": "pelvis",
    "seeds": [
@@ -44,8 +44,8 @@
     18
    ],
    "pivot": [
-    23,
-    31
+    21.5,
+    32.5
    ],
    "parent": "pelvis",
    "seeds": [
@@ -68,8 +68,8 @@
     8
    ],
    "pivot": [
-    27,
-    28
+    24.881,
+    28.595
    ],
    "parent": null,
    "seeds": [
@@ -92,8 +92,8 @@
     12
    ],
    "pivot": [
-    27,
-    26
+    24.5,
+    25.5
    ],
    "parent": "pelvis",
    "seeds": [
@@ -116,8 +116,8 @@
     14
    ],
    "pivot": [
-    25,
-    15
+    25.5,
+    12.5
    ],
    "parent": "torso",
    "seeds": [
@@ -140,8 +140,8 @@
     13
    ],
    "pivot": [
-    32,
-    23
+    18.5,
+    19.5
    ],
    "parent": "torso",
    "seeds": [
@@ -164,8 +164,8 @@
     8
    ],
    "pivot": [
-    22,
-    20
+    30.5,
+    18.5
    ],
    "parent": "torso",
    "seeds": [
@@ -184,8 +184,8 @@
     22
    ],
    "pivot": [
-    20,
-    24
+    32.5,
+    20.0
    ],
    "parent": "arm_shield",
    "seeds": [
@@ -260,8 +260,48 @@
       }
      }
     }
-   ],
-   "min_distinct": 1.5
+   ]
+  },
+  {
+   "name": "idle_b",
+   "fps": 4,
+   "loop": true,
+   "frames": [
+    {
+     "pose": {
+      "head": {
+       "rot": -8
+      }
+     }
+    },
+    {
+     "pose": {
+      "head": {
+       "rot": -8
+      },
+      "arm_shield": {
+       "rot": 2
+      }
+     }
+    },
+    {
+     "pose": {
+      "head": {
+       "rot": 8
+      }
+     }
+    },
+    {
+     "pose": {
+      "head": {
+       "rot": 8
+      },
+      "arm_shield": {
+       "rot": 2
+      }
+     }
+    }
+   ]
   },
   {
    "name": "walk",
@@ -271,10 +311,10 @@
     {
      "pose": {
       "leg_l": {
-       "rot": -10
+       "rot": -25.0
       },
       "leg_r": {
-       "rot": 10
+       "rot": 25.0
       }
      }
     },
@@ -284,20 +324,20 @@
        "dy": -1
       },
       "leg_l": {
-       "rot": 0
+       "rot": 0.0
       },
       "leg_r": {
-       "rot": 0
+       "rot": 0.0
       }
      }
     },
     {
      "pose": {
       "leg_l": {
-       "rot": 10
+       "rot": 25.0
       },
       "leg_r": {
-       "rot": -10
+       "rot": -25.0
       }
      }
     },
@@ -307,48 +347,139 @@
        "dy": -1
       },
       "leg_l": {
-       "rot": 0
+       "rot": 0.0
       },
       "leg_r": {
-       "rot": 0
+       "rot": 0.0
       }
      }
     }
    ]
   },
   {
-   "name": "ready",
-   "fps": 10,
-   "loop": false,
+   "name": "alert",
+   "fps": 4,
+   "loop": true,
+   "frames": [
+    {
+     "pose": {
+      "head": {
+       "rot": -6
+      },
+      "torso": {
+       "rot": -2
+      },
+      "arm_weapon": {
+       "rot": -8
+      }
+     }
+    },
+    {
+     "pose": {
+      "head": {
+       "rot": -6,
+       "dy": -1
+      },
+      "torso": {
+       "rot": -3
+      },
+      "arm_weapon": {
+       "rot": -12
+      },
+      "arm_shield": {
+       "rot": -4
+      }
+     }
+    }
+   ]
+  },
+  {
+   "name": "hostile",
+   "fps": 6,
+   "loop": true,
    "frames": [
     {
      "pose": {
       "arm_weapon": {
-       "rot": -16
+       "rot": -24
+      },
+      "torso": {
+       "rot": 3
+      },
+      "arm_shield": {
+       "rot": -6
       }
      }
     },
     {
      "pose": {
       "arm_weapon": {
-       "rot": -30
+       "rot": -28
+      },
+      "torso": {
+       "rot": 3,
+       "dy": -1
+      },
+      "arm_shield": {
+       "rot": -6
+      }
+     }
+    },
+    {
+     "pose": {
+      "arm_weapon": {
+       "rot": -24
+      },
+      "torso": {
+       "rot": 4
+      },
+      "arm_shield": {
+       "rot": -8
+      }
+     }
+    },
+    {
+     "pose": {
+      "arm_weapon": {
+       "rot": -20
+      },
+      "torso": {
+       "rot": 3,
+       "dy": -1
+      },
+      "arm_shield": {
+       "rot": -6
+      }
+     }
+    }
+   ]
+  },
+  {
+   "name": "attack_a",
+   "fps": 20,
+   "loop": false,
+   "frames": [
+    {
+     "pose": {
+      "arm_weapon": {
+       "rot": -20.8
+      }
+     }
+    },
+    {
+     "pose": {
+      "arm_weapon": {
+       "rot": -39.0
       },
       "torso": {
        "rot": -3
       }
      }
-    }
-   ]
-  },
-  {
-   "name": "windup",
-   "fps": 10,
-   "loop": false,
-   "frames": [
+    },
     {
      "pose": {
       "arm_weapon": {
-       "rot": -46
+       "rot": -59.800000000000004
       },
       "torso": {
        "rot": -6
@@ -361,7 +492,7 @@
     {
      "pose": {
       "arm_weapon": {
-       "rot": -62
+       "rot": -80.60000000000001
       },
       "torso": {
        "rot": -9
@@ -372,20 +503,12 @@
       "head": {
        "rot": -4
       }
-     },
-     "hold": 2
-    }
-   ]
-  },
-  {
-   "name": "strike",
-   "fps": 14,
-   "loop": false,
-   "frames": [
+     }
+    },
     {
      "pose": {
       "arm_weapon": {
-       "rot": -20
+       "rot": -26.0
       },
       "torso": {
        "rot": 2,
@@ -399,7 +522,7 @@
     {
      "pose": {
       "arm_weapon": {
-       "rot": 34
+       "rot": 44.2
       },
       "torso": {
        "rot": 10,
@@ -416,7 +539,7 @@
     {
      "pose": {
       "arm_weapon": {
-       "rot": 44
+       "rot": 57.2
       },
       "torso": {
        "rot": 8,
@@ -429,18 +552,11 @@
        "rot": 4
       }
      }
-    }
-   ]
-  },
-  {
-   "name": "recover",
-   "fps": 8,
-   "loop": false,
-   "frames": [
+    },
     {
      "pose": {
       "arm_weapon": {
-       "rot": 22
+       "rot": 28.6
       },
       "torso": {
        "rot": 4
@@ -450,10 +566,91 @@
     {
      "pose": {
       "arm_weapon": {
-       "rot": 8
+       "rot": 10.4
       },
       "torso": {
        "rot": 1
+      }
+     }
+    }
+   ]
+  },
+  {
+   "name": "attack_b",
+   "fps": 12,
+   "loop": false,
+   "frames": [
+    {
+     "pose": {
+      "arm_shield": {
+       "rot": -20
+      },
+      "torso": {
+       "rot": -6
+      },
+      "shield": {
+       "rot": -6
+      }
+     }
+    },
+    {
+     "pose": {
+      "arm_shield": {
+       "rot": 22
+      },
+      "torso": {
+       "rot": 8,
+       "dx": 2
+      },
+      "shield": {
+       "dx": 2
+      }
+     }
+    },
+    {
+     "pose": {
+      "arm_shield": {
+       "rot": 10
+      },
+      "torso": {
+       "rot": 3
+      }
+     }
+    }
+   ]
+  },
+  {
+   "name": "damage",
+   "fps": 12,
+   "loop": false,
+   "frames": [
+    {
+     "pose": {
+      "torso": {
+       "rot": -8
+      },
+      "head": {
+       "rot": -8
+      },
+      "arm_weapon": {
+       "rot": 10
+      }
+     }
+    },
+    {
+     "pose": {
+      "torso": {
+       "rot": -6
+      },
+      "head": {
+       "rot": -6
+      }
+     }
+    },
+    {
+     "pose": {
+      "torso": {
+       "rot": -2
       }
      }
     }

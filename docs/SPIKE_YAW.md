@@ -154,3 +154,16 @@ mirror, so `agree` does not apply.
 
 **Left:** 4 one-texel tears at the neck seam of the mirrored views; stray foot fragments in the profile
 (generated art, defect G9); no knee bend (G3).
+
+
+## Update: the full set (G4, G5, G6)
+
+`examples/skeleton_warrior/make_full_set.py` builds `rig_fullset.json` and `fullset_manifest.json`: eight states at
+eight facings, 33 frames per facing, 264 in all. See `docs/ANIMATION_SET.md` for the status table and numbers.
+
+New in the renderer: `flash` (a frame's colour override), view variants may carry a synth mask, `yaw_gain`, per-view
+pivots. New in the gates: `facings`, thickness-based `holes`, yaw-aware `volume`/`variant`.
+`segment_views.py` now cuts each view twice (once to find the joints, again with underlap sized for those joints and for
+the worst-case poses of every state, written by `make_full_set.py`).
+
+Not merged to `main`: this is a spike branch with no Lua mirror.

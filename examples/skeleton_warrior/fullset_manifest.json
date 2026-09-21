@@ -1,0 +1,1090 @@
+{
+ "cell": [
+  48,
+  48
+ ],
+ "facings": [
+  0,
+  45,
+  90,
+  135,
+  180,
+  225,
+  270,
+  315
+ ],
+ "frames": 264,
+ "mirrors": "225, 270 and 315 are baked here; an engine with a shader mirror needs only 0-180",
+ "kinds": {
+  "alert": [
+   "alert"
+  ],
+  "attack": [
+   "attack_a",
+   "attack_b"
+  ],
+  "damage": [
+   "damage"
+  ],
+  "hostile": [
+   "hostile"
+  ],
+  "idle": [
+   "idle",
+   "idle_b"
+  ],
+  "walk": [
+   "walk"
+  ]
+ },
+ "entries": [
+  {
+   "state": "idle",
+   "kind": "idle",
+   "facing": 0,
+   "tag": "idle_000",
+   "first": 0,
+   "count": 4,
+   "fps": 6,
+   "loop": true,
+   "holds": [
+    1,
+    1,
+    1,
+    1
+   ]
+  },
+  {
+   "state": "idle_b",
+   "kind": "idle",
+   "facing": 0,
+   "tag": "idle_b_000",
+   "first": 4,
+   "count": 4,
+   "fps": 4,
+   "loop": true,
+   "holds": [
+    1,
+    1,
+    1,
+    1
+   ]
+  },
+  {
+   "state": "walk",
+   "kind": "walk",
+   "facing": 0,
+   "tag": "walk_000",
+   "first": 8,
+   "count": 4,
+   "fps": 8,
+   "loop": true,
+   "holds": [
+    1,
+    1,
+    1,
+    1
+   ]
+  },
+  {
+   "state": "alert",
+   "kind": "alert",
+   "facing": 0,
+   "tag": "alert_000",
+   "first": 12,
+   "count": 2,
+   "fps": 4,
+   "loop": true,
+   "holds": [
+    1,
+    1
+   ]
+  },
+  {
+   "state": "hostile",
+   "kind": "hostile",
+   "facing": 0,
+   "tag": "hostile_000",
+   "first": 14,
+   "count": 4,
+   "fps": 6,
+   "loop": true,
+   "holds": [
+    1,
+    1,
+    1,
+    1
+   ]
+  },
+  {
+   "state": "attack_a",
+   "kind": "attack",
+   "facing": 0,
+   "tag": "attack_a_000",
+   "first": 18,
+   "count": 9,
+   "fps": 20,
+   "loop": false,
+   "holds": [
+    2,
+    2,
+    2,
+    4,
+    1,
+    1,
+    1,
+    2,
+    2
+   ],
+   "commit_frame": 4
+  },
+  {
+   "state": "attack_b",
+   "kind": "attack",
+   "facing": 0,
+   "tag": "attack_b_000",
+   "first": 27,
+   "count": 3,
+   "fps": 12,
+   "loop": false,
+   "holds": [
+    1,
+    1,
+    1
+   ],
+   "commit_frame": 1
+  },
+  {
+   "state": "damage",
+   "kind": "damage",
+   "facing": 0,
+   "tag": "damage_000",
+   "first": 30,
+   "count": 3,
+   "fps": 12,
+   "loop": false,
+   "holds": [
+    1,
+    1,
+    1
+   ]
+  },
+  {
+   "state": "idle",
+   "kind": "idle",
+   "facing": 45,
+   "tag": "idle_045",
+   "first": 33,
+   "count": 4,
+   "fps": 6,
+   "loop": true,
+   "holds": [
+    1,
+    1,
+    1,
+    1
+   ]
+  },
+  {
+   "state": "idle_b",
+   "kind": "idle",
+   "facing": 45,
+   "tag": "idle_b_045",
+   "first": 37,
+   "count": 4,
+   "fps": 4,
+   "loop": true,
+   "holds": [
+    1,
+    1,
+    1,
+    1
+   ]
+  },
+  {
+   "state": "walk",
+   "kind": "walk",
+   "facing": 45,
+   "tag": "walk_045",
+   "first": 41,
+   "count": 4,
+   "fps": 8,
+   "loop": true,
+   "holds": [
+    1,
+    1,
+    1,
+    1
+   ]
+  },
+  {
+   "state": "alert",
+   "kind": "alert",
+   "facing": 45,
+   "tag": "alert_045",
+   "first": 45,
+   "count": 2,
+   "fps": 4,
+   "loop": true,
+   "holds": [
+    1,
+    1
+   ]
+  },
+  {
+   "state": "hostile",
+   "kind": "hostile",
+   "facing": 45,
+   "tag": "hostile_045",
+   "first": 47,
+   "count": 4,
+   "fps": 6,
+   "loop": true,
+   "holds": [
+    1,
+    1,
+    1,
+    1
+   ]
+  },
+  {
+   "state": "attack_a",
+   "kind": "attack",
+   "facing": 45,
+   "tag": "attack_a_045",
+   "first": 51,
+   "count": 9,
+   "fps": 20,
+   "loop": false,
+   "holds": [
+    2,
+    2,
+    2,
+    4,
+    1,
+    1,
+    1,
+    2,
+    2
+   ],
+   "commit_frame": 4
+  },
+  {
+   "state": "attack_b",
+   "kind": "attack",
+   "facing": 45,
+   "tag": "attack_b_045",
+   "first": 60,
+   "count": 3,
+   "fps": 12,
+   "loop": false,
+   "holds": [
+    1,
+    1,
+    1
+   ],
+   "commit_frame": 1
+  },
+  {
+   "state": "damage",
+   "kind": "damage",
+   "facing": 45,
+   "tag": "damage_045",
+   "first": 63,
+   "count": 3,
+   "fps": 12,
+   "loop": false,
+   "holds": [
+    1,
+    1,
+    1
+   ]
+  },
+  {
+   "state": "idle",
+   "kind": "idle",
+   "facing": 90,
+   "tag": "idle_090",
+   "first": 66,
+   "count": 4,
+   "fps": 6,
+   "loop": true,
+   "holds": [
+    1,
+    1,
+    1,
+    1
+   ]
+  },
+  {
+   "state": "idle_b",
+   "kind": "idle",
+   "facing": 90,
+   "tag": "idle_b_090",
+   "first": 70,
+   "count": 4,
+   "fps": 4,
+   "loop": true,
+   "holds": [
+    1,
+    1,
+    1,
+    1
+   ]
+  },
+  {
+   "state": "walk",
+   "kind": "walk",
+   "facing": 90,
+   "tag": "walk_090",
+   "first": 74,
+   "count": 4,
+   "fps": 8,
+   "loop": true,
+   "holds": [
+    1,
+    1,
+    1,
+    1
+   ]
+  },
+  {
+   "state": "alert",
+   "kind": "alert",
+   "facing": 90,
+   "tag": "alert_090",
+   "first": 78,
+   "count": 2,
+   "fps": 4,
+   "loop": true,
+   "holds": [
+    1,
+    1
+   ]
+  },
+  {
+   "state": "hostile",
+   "kind": "hostile",
+   "facing": 90,
+   "tag": "hostile_090",
+   "first": 80,
+   "count": 4,
+   "fps": 6,
+   "loop": true,
+   "holds": [
+    1,
+    1,
+    1,
+    1
+   ]
+  },
+  {
+   "state": "attack_a",
+   "kind": "attack",
+   "facing": 90,
+   "tag": "attack_a_090",
+   "first": 84,
+   "count": 9,
+   "fps": 20,
+   "loop": false,
+   "holds": [
+    2,
+    2,
+    2,
+    4,
+    1,
+    1,
+    1,
+    2,
+    2
+   ],
+   "commit_frame": 4
+  },
+  {
+   "state": "attack_b",
+   "kind": "attack",
+   "facing": 90,
+   "tag": "attack_b_090",
+   "first": 93,
+   "count": 3,
+   "fps": 12,
+   "loop": false,
+   "holds": [
+    1,
+    1,
+    1
+   ],
+   "commit_frame": 1
+  },
+  {
+   "state": "damage",
+   "kind": "damage",
+   "facing": 90,
+   "tag": "damage_090",
+   "first": 96,
+   "count": 3,
+   "fps": 12,
+   "loop": false,
+   "holds": [
+    1,
+    1,
+    1
+   ]
+  },
+  {
+   "state": "idle",
+   "kind": "idle",
+   "facing": 135,
+   "tag": "idle_135",
+   "first": 99,
+   "count": 4,
+   "fps": 6,
+   "loop": true,
+   "holds": [
+    1,
+    1,
+    1,
+    1
+   ]
+  },
+  {
+   "state": "idle_b",
+   "kind": "idle",
+   "facing": 135,
+   "tag": "idle_b_135",
+   "first": 103,
+   "count": 4,
+   "fps": 4,
+   "loop": true,
+   "holds": [
+    1,
+    1,
+    1,
+    1
+   ]
+  },
+  {
+   "state": "walk",
+   "kind": "walk",
+   "facing": 135,
+   "tag": "walk_135",
+   "first": 107,
+   "count": 4,
+   "fps": 8,
+   "loop": true,
+   "holds": [
+    1,
+    1,
+    1,
+    1
+   ]
+  },
+  {
+   "state": "alert",
+   "kind": "alert",
+   "facing": 135,
+   "tag": "alert_135",
+   "first": 111,
+   "count": 2,
+   "fps": 4,
+   "loop": true,
+   "holds": [
+    1,
+    1
+   ]
+  },
+  {
+   "state": "hostile",
+   "kind": "hostile",
+   "facing": 135,
+   "tag": "hostile_135",
+   "first": 113,
+   "count": 4,
+   "fps": 6,
+   "loop": true,
+   "holds": [
+    1,
+    1,
+    1,
+    1
+   ]
+  },
+  {
+   "state": "attack_a",
+   "kind": "attack",
+   "facing": 135,
+   "tag": "attack_a_135",
+   "first": 117,
+   "count": 9,
+   "fps": 20,
+   "loop": false,
+   "holds": [
+    2,
+    2,
+    2,
+    4,
+    1,
+    1,
+    1,
+    2,
+    2
+   ],
+   "commit_frame": 4
+  },
+  {
+   "state": "attack_b",
+   "kind": "attack",
+   "facing": 135,
+   "tag": "attack_b_135",
+   "first": 126,
+   "count": 3,
+   "fps": 12,
+   "loop": false,
+   "holds": [
+    1,
+    1,
+    1
+   ],
+   "commit_frame": 1
+  },
+  {
+   "state": "damage",
+   "kind": "damage",
+   "facing": 135,
+   "tag": "damage_135",
+   "first": 129,
+   "count": 3,
+   "fps": 12,
+   "loop": false,
+   "holds": [
+    1,
+    1,
+    1
+   ]
+  },
+  {
+   "state": "idle",
+   "kind": "idle",
+   "facing": 180,
+   "tag": "idle_180",
+   "first": 132,
+   "count": 4,
+   "fps": 6,
+   "loop": true,
+   "holds": [
+    1,
+    1,
+    1,
+    1
+   ]
+  },
+  {
+   "state": "idle_b",
+   "kind": "idle",
+   "facing": 180,
+   "tag": "idle_b_180",
+   "first": 136,
+   "count": 4,
+   "fps": 4,
+   "loop": true,
+   "holds": [
+    1,
+    1,
+    1,
+    1
+   ]
+  },
+  {
+   "state": "walk",
+   "kind": "walk",
+   "facing": 180,
+   "tag": "walk_180",
+   "first": 140,
+   "count": 4,
+   "fps": 8,
+   "loop": true,
+   "holds": [
+    1,
+    1,
+    1,
+    1
+   ]
+  },
+  {
+   "state": "alert",
+   "kind": "alert",
+   "facing": 180,
+   "tag": "alert_180",
+   "first": 144,
+   "count": 2,
+   "fps": 4,
+   "loop": true,
+   "holds": [
+    1,
+    1
+   ]
+  },
+  {
+   "state": "hostile",
+   "kind": "hostile",
+   "facing": 180,
+   "tag": "hostile_180",
+   "first": 146,
+   "count": 4,
+   "fps": 6,
+   "loop": true,
+   "holds": [
+    1,
+    1,
+    1,
+    1
+   ]
+  },
+  {
+   "state": "attack_a",
+   "kind": "attack",
+   "facing": 180,
+   "tag": "attack_a_180",
+   "first": 150,
+   "count": 9,
+   "fps": 20,
+   "loop": false,
+   "holds": [
+    2,
+    2,
+    2,
+    4,
+    1,
+    1,
+    1,
+    2,
+    2
+   ],
+   "commit_frame": 4
+  },
+  {
+   "state": "attack_b",
+   "kind": "attack",
+   "facing": 180,
+   "tag": "attack_b_180",
+   "first": 159,
+   "count": 3,
+   "fps": 12,
+   "loop": false,
+   "holds": [
+    1,
+    1,
+    1
+   ],
+   "commit_frame": 1
+  },
+  {
+   "state": "damage",
+   "kind": "damage",
+   "facing": 180,
+   "tag": "damage_180",
+   "first": 162,
+   "count": 3,
+   "fps": 12,
+   "loop": false,
+   "holds": [
+    1,
+    1,
+    1
+   ]
+  },
+  {
+   "state": "idle",
+   "kind": "idle",
+   "facing": 225,
+   "tag": "idle_225",
+   "first": 165,
+   "count": 4,
+   "fps": 6,
+   "loop": true,
+   "holds": [
+    1,
+    1,
+    1,
+    1
+   ]
+  },
+  {
+   "state": "idle_b",
+   "kind": "idle",
+   "facing": 225,
+   "tag": "idle_b_225",
+   "first": 169,
+   "count": 4,
+   "fps": 4,
+   "loop": true,
+   "holds": [
+    1,
+    1,
+    1,
+    1
+   ]
+  },
+  {
+   "state": "walk",
+   "kind": "walk",
+   "facing": 225,
+   "tag": "walk_225",
+   "first": 173,
+   "count": 4,
+   "fps": 8,
+   "loop": true,
+   "holds": [
+    1,
+    1,
+    1,
+    1
+   ]
+  },
+  {
+   "state": "alert",
+   "kind": "alert",
+   "facing": 225,
+   "tag": "alert_225",
+   "first": 177,
+   "count": 2,
+   "fps": 4,
+   "loop": true,
+   "holds": [
+    1,
+    1
+   ]
+  },
+  {
+   "state": "hostile",
+   "kind": "hostile",
+   "facing": 225,
+   "tag": "hostile_225",
+   "first": 179,
+   "count": 4,
+   "fps": 6,
+   "loop": true,
+   "holds": [
+    1,
+    1,
+    1,
+    1
+   ]
+  },
+  {
+   "state": "attack_a",
+   "kind": "attack",
+   "facing": 225,
+   "tag": "attack_a_225",
+   "first": 183,
+   "count": 9,
+   "fps": 20,
+   "loop": false,
+   "holds": [
+    2,
+    2,
+    2,
+    4,
+    1,
+    1,
+    1,
+    2,
+    2
+   ],
+   "commit_frame": 4
+  },
+  {
+   "state": "attack_b",
+   "kind": "attack",
+   "facing": 225,
+   "tag": "attack_b_225",
+   "first": 192,
+   "count": 3,
+   "fps": 12,
+   "loop": false,
+   "holds": [
+    1,
+    1,
+    1
+   ],
+   "commit_frame": 1
+  },
+  {
+   "state": "damage",
+   "kind": "damage",
+   "facing": 225,
+   "tag": "damage_225",
+   "first": 195,
+   "count": 3,
+   "fps": 12,
+   "loop": false,
+   "holds": [
+    1,
+    1,
+    1
+   ]
+  },
+  {
+   "state": "idle",
+   "kind": "idle",
+   "facing": 270,
+   "tag": "idle_270",
+   "first": 198,
+   "count": 4,
+   "fps": 6,
+   "loop": true,
+   "holds": [
+    1,
+    1,
+    1,
+    1
+   ]
+  },
+  {
+   "state": "idle_b",
+   "kind": "idle",
+   "facing": 270,
+   "tag": "idle_b_270",
+   "first": 202,
+   "count": 4,
+   "fps": 4,
+   "loop": true,
+   "holds": [
+    1,
+    1,
+    1,
+    1
+   ]
+  },
+  {
+   "state": "walk",
+   "kind": "walk",
+   "facing": 270,
+   "tag": "walk_270",
+   "first": 206,
+   "count": 4,
+   "fps": 8,
+   "loop": true,
+   "holds": [
+    1,
+    1,
+    1,
+    1
+   ]
+  },
+  {
+   "state": "alert",
+   "kind": "alert",
+   "facing": 270,
+   "tag": "alert_270",
+   "first": 210,
+   "count": 2,
+   "fps": 4,
+   "loop": true,
+   "holds": [
+    1,
+    1
+   ]
+  },
+  {
+   "state": "hostile",
+   "kind": "hostile",
+   "facing": 270,
+   "tag": "hostile_270",
+   "first": 212,
+   "count": 4,
+   "fps": 6,
+   "loop": true,
+   "holds": [
+    1,
+    1,
+    1,
+    1
+   ]
+  },
+  {
+   "state": "attack_a",
+   "kind": "attack",
+   "facing": 270,
+   "tag": "attack_a_270",
+   "first": 216,
+   "count": 9,
+   "fps": 20,
+   "loop": false,
+   "holds": [
+    2,
+    2,
+    2,
+    4,
+    1,
+    1,
+    1,
+    2,
+    2
+   ],
+   "commit_frame": 4
+  },
+  {
+   "state": "attack_b",
+   "kind": "attack",
+   "facing": 270,
+   "tag": "attack_b_270",
+   "first": 225,
+   "count": 3,
+   "fps": 12,
+   "loop": false,
+   "holds": [
+    1,
+    1,
+    1
+   ],
+   "commit_frame": 1
+  },
+  {
+   "state": "damage",
+   "kind": "damage",
+   "facing": 270,
+   "tag": "damage_270",
+   "first": 228,
+   "count": 3,
+   "fps": 12,
+   "loop": false,
+   "holds": [
+    1,
+    1,
+    1
+   ]
+  },
+  {
+   "state": "idle",
+   "kind": "idle",
+   "facing": 315,
+   "tag": "idle_315",
+   "first": 231,
+   "count": 4,
+   "fps": 6,
+   "loop": true,
+   "holds": [
+    1,
+    1,
+    1,
+    1
+   ]
+  },
+  {
+   "state": "idle_b",
+   "kind": "idle",
+   "facing": 315,
+   "tag": "idle_b_315",
+   "first": 235,
+   "count": 4,
+   "fps": 4,
+   "loop": true,
+   "holds": [
+    1,
+    1,
+    1,
+    1
+   ]
+  },
+  {
+   "state": "walk",
+   "kind": "walk",
+   "facing": 315,
+   "tag": "walk_315",
+   "first": 239,
+   "count": 4,
+   "fps": 8,
+   "loop": true,
+   "holds": [
+    1,
+    1,
+    1,
+    1
+   ]
+  },
+  {
+   "state": "alert",
+   "kind": "alert",
+   "facing": 315,
+   "tag": "alert_315",
+   "first": 243,
+   "count": 2,
+   "fps": 4,
+   "loop": true,
+   "holds": [
+    1,
+    1
+   ]
+  },
+  {
+   "state": "hostile",
+   "kind": "hostile",
+   "facing": 315,
+   "tag": "hostile_315",
+   "first": 245,
+   "count": 4,
+   "fps": 6,
+   "loop": true,
+   "holds": [
+    1,
+    1,
+    1,
+    1
+   ]
+  },
+  {
+   "state": "attack_a",
+   "kind": "attack",
+   "facing": 315,
+   "tag": "attack_a_315",
+   "first": 249,
+   "count": 9,
+   "fps": 20,
+   "loop": false,
+   "holds": [
+    2,
+    2,
+    2,
+    4,
+    1,
+    1,
+    1,
+    2,
+    2
+   ],
+   "commit_frame": 4
+  },
+  {
+   "state": "attack_b",
+   "kind": "attack",
+   "facing": 315,
+   "tag": "attack_b_315",
+   "first": 258,
+   "count": 3,
+   "fps": 12,
+   "loop": false,
+   "holds": [
+    1,
+    1,
+    1
+   ],
+   "commit_frame": 1
+  },
+  {
+   "state": "damage",
+   "kind": "damage",
+   "facing": 315,
+   "tag": "damage_315",
+   "first": 261,
+   "count": 3,
+   "fps": 12,
+   "loop": false,
+   "holds": [
+    1,
+    1,
+    1
+   ]
+  }
+ ]
+}

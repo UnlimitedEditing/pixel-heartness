@@ -30,6 +30,10 @@ The thesis this tests: *eyes scale with the number of primitives, not the number
 
 | 17 | `holes` fails on yaw frames built from a view whose silhouette legitimately has gaps (arm away from body in a 3/4) | it counts enclosed background absent from the front pose, not from the frame's own view | compare a yaw frame against the rest silhouette of the view it uses; spike branch only |
 
+| 18 | Patched-mirror facings (225, 315) crack at the shoulder seam under pose rotation: 22 of 33 frames at 315 degrees. The shield and arms are unmirrored while their parent torso is mirrored | structural to `patch_handed`; more underlap and pivot-matched underlap did not change it (65 -> 63 -> 67 frames) | make handed parts hang from a mirrored anchor, or give those views authored arm variants |
+| 19 | The flash frame is a solid one-colour silhouette and loses all detail; a white flash is impossible while no white is in the palette | flash colour must already be in the palette | a per-rig `flash_colour` added to the palette gate's allowance, or a lighten-by-palette-step mode |
+| 20 | Poses for alert, hostile, attack_b, damage and idle_b were authored without review; damage recoil is in screen-space rotation, not away from the attacker | authored by the assistant in one pass | a review by eye and a `recoil direction` parameter |
+
 ## Backlog (deliberately not done, from the handoff)
 
 Ordered as the handoff ordered them; item numbers are its section numbers.

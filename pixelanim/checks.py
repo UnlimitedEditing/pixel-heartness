@@ -123,7 +123,12 @@ def gate_holes(rig, parts, frames, args):
         tear = np.zeros_like(h)
         for c in range(1, k + 1):
             comp = cc == c
-            if int((comp & ref).sum()) * 2 > int(comp.sum()):
+            # a crack is thin; a window between a raised arm and the torso is wide. The widest
+            # point of the region (twice its deepest distance from the outside) tells them apart,
+            # so a big legitimate gap is no longer called a tear just because an arm used to hang
+            # there. `tear_max_width` (rig field, default 2 texels) is the widest crack.
+            width = 2.0 * float(ndimage.distance_transform_edt(comp).max())
+            if int((comp & ref).sum()) * 2 > int(comp.sum()) and width <= float(rig.data.get("tear_max_width", 2.0)):
                 tear |= comp
         neg = h & ~tear
         tears_total += int(tear.sum())
@@ -271,9 +276,12 @@ def gate_variant(rig, parts, frames, args):
     one is art nobody sees. Variant art is placed by the same rule as the source
     sprite, so it should be the same size as the source.
     """
-    declared = {(p["name"], v) for p in rig.parts for v in p.get("variants", {})}
+    # variants named by the rig's `views` are drawn by yaw, not by a pose: they are a different
+    # view of the part, so neither "used by a pose" nor "overlaps the front art" applies to them
+    view_variants = {v.get("variant") for v in rig.data.get("views", []) if v.get("variant")}
+    declared = {(p["name"], v) for p in rig.parts for v in p.get("variants", {}) if v not in view_variants}
     if not declared:
-        return True, ["no variants declared"]
+        return True, ["no pose variants declared" + (" (%d view variants are checked by yaw)" % len(view_variants) if view_variants else "")]
     bad, used = [], set()
     for st in rig.states:
         for j, fr in enumerate(st["frames"]):
@@ -444,7 +452,7 @@ def gate_volume(rig, parts, frames, args):
         if not fr.get("squash"):
             continue
         n += 1
-        flat, _, _ = render.compose(rig, parts, fr["pose"])
+        flat, _, _ = render.compose(rig, parts, fr["pose"], yaw=fr.get("yaw", 0.0))   # same view, squash off
         before = int((flat[:, :, 3] > riglib.ALPHA_CUT).sum())
         after = int(alpha(fr).sum())
         drift = abs(after - before) / max(1, before)

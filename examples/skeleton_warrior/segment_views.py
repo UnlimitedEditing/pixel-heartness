@@ -29,6 +29,8 @@ import segment         # noqa: E402
 import mirrorpatch as mp   # noqa: E402
 
 RED = mp.SHIELD_COLOURS
+_u = HERE / "views" / "underlap_states.json"
+UNDER = json.loads(_u.read_text(encoding="utf-8")) if _u.exists() else []   # written by make_full_set.py
 PARTS = ["leg_r", "leg_l", "pelvis", "torso", "head", "arm_weapon", "arm_shield", "shield"]
 AXIS = 24.5
 
@@ -103,14 +105,49 @@ def propose(rgba):
     return seeds, dict(neck=int(neck), y0=int(y0), y1=int(y1))
 
 
-def view_rig(name, seeds):
+def pivots_from_lab(lab, idx, base_parts):
+    """A joint is where a part meets its parent: the contact point nearest the parent's centre
+    (same rule as derive_pivots.py, computed straight from the label map)."""
+    piv = {}
+    for p in base_parts:
+        n = p["name"]
+        m = lab == idx[n]
+        parent = p.get("parent")
+        if not m.any():
+            piv[n] = list(p["pivot"])
+        elif not parent:
+            ys, xs = np.where(m)
+            piv[n] = [float(xs.mean()) + 0.5, float(ys.mean()) + 0.5]
+        else:
+            pm = lab == idx[parent]
+            touch = m & ndimage.binary_dilation(pm, structure=np.ones((3, 3)))
+            if touch.any() and pm.any():
+                ys, xs = np.where(touch)
+                pcy, pcx = np.where(pm)
+                d = (xs - pcx.mean()) ** 2 + (ys - pcy.mean()) ** 2
+                near = d <= d.min() + 2.0
+                piv[n] = [float(xs[near].mean()) + 0.5, float(ys[near].mean()) + 0.5]
+            elif pm.any():
+                cy, cx = np.where(m)
+                py, px = np.where(pm)
+                dd = (cx[:, None] - px[None, :]) ** 2 + (cy[:, None] - py[None, :]) ** 2
+                i, j = np.unravel_index(dd.argmin(), dd.shape)
+                piv[n] = [(cx[i] + px[j]) / 2.0 + 0.5, (cy[i] + py[j]) / 2.0 + 0.5]
+            else:
+                piv[n] = list(p["pivot"])
+    return piv
+
+
+def view_rig(name, seeds, pivots=None, underlap=4):
     base = json.loads((HERE / "rig.json").read_text(encoding="utf-8"))
     rig = {"name": "view_" + name, "source": str((HERE / "views" / ("reg_%s.png" % name)).as_posix()),
            "parts_file": "out/_v.aseprite", "anim_file": "out/_v_anim.aseprite", "strip_file": "out/_v.png",
-           "cell": [48, 48], "underlap": 4, "symmetry_x": AXIS, "parts": [], "states": base["states"]}
+           "cell": [48, 48], "underlap": underlap, "symmetry_x": AXIS, "parts": [], "states": UNDER}
     for p in base["parts"]:
         q = {k: v for k, v in p.items() if k in ("name", "rect", "pivot", "parent")}
         q["seeds"] = seeds[p["name"]]
+        if pivots:
+            q["pivot"] = [round(v, 3) for v in pivots[p["name"]]]
         rig["parts"].append(q)
     return rig
 
@@ -120,14 +157,23 @@ PALETTE = {"leg_r": (230, 90, 90), "leg_l": (90, 150, 230), "pelvis": (230, 190,
            "shield": (230, 140, 50)}
 
 
+ALL_PIVOTS = {}
+
+
 def main(names):
     (HERE / "views").mkdir(exist_ok=True)
     for name in names:
         rgba = np.array(Image.open(HERE / "views" / ("reg_%s.png" % name)).convert("RGBA"))
         seeds, info = propose(rgba)
-        rigd = view_rig(name, seeds)
+        base_parts = json.loads((HERE / "rig.json").read_text(encoding="utf-8"))["parts"]
         path = HERE / "views" / ("_rig_%s.json" % name)
-        path.write_text(json.dumps(rigd, indent=1), encoding="utf-8")
+        # pass 1: cut the view with no underlap, only to find where its joints are
+        path.write_text(json.dumps(view_rig(name, seeds, None, 0), indent=1), encoding="utf-8")
+        res0 = segment.segment(riglib.load_rig(path), 0, 6.0, "mirror", "none", None, quiet=True, allow_bad_seeds=True)
+        pivs = pivots_from_lab(res0["lab"], res0["idx"], base_parts)
+        ALL_PIVOTS[name] = pivs
+        # pass 2: cut again with those joints, so the underlap is sized for the pivots the renderer will use
+        path.write_text(json.dumps(view_rig(name, seeds, pivs, 4), indent=1), encoding="utf-8")
         rig = riglib.load_rig(path)
         try:
             res = segment.segment(rig, 4, 6.0, "mirror", "none", None, quiet=True)
@@ -162,5 +208,10 @@ def main(names):
             Image.fromarray(sm, "RGBA").save(HERE / "views" / ("%s_%s.synth.png" % (name, p)))
 
 
+def write_pivots():
+    (HERE / "views" / "pivots.json").write_text(json.dumps(ALL_PIVOTS, indent=1), encoding="utf-8")
+
+
 if __name__ == "__main__":
     main(sys.argv[1:] or ["v45", "v90", "v135", "v180"])
+    write_pivots()

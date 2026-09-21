@@ -58,3 +58,38 @@ Ordered by what blocks what. G1-G3 are the three named while asking "can we turn
 3. **G7** before adding states, so new states are gated at every facing from the start.
 4. **G4/G5/G6** as content: alert, hostile, damage (with flash), the manifest.
 5. **G8** when the next non-biped is attempted; **G11** whenever the engine work is scheduled.
+
+## Status after the overnight spike (branch `spike-yaw`, 2026-09-21)
+
+Everything below is on `spike-yaw`; `main` is untouched by it. Full detail in `docs/SPIKE_YAW.md`.
+
+| # | gap | state |
+|---|---|---|
+| G1 | per-view pivots | **done** (spike). Derived from each view's own segmentation; used by FK and by the underlap derivation |
+| G2 | view-dependent motion | **done for legs and the sword arm** via `yaw_gain` (lerp of two multipliers by |sin yaw|). Scissor-like in profile, no knee bend. Other limbs not tuned |
+| G3 | variants for what one-bone parts cannot do | **not started.** No knee variants, no jaw, no pain face. The generated side frames have the bent knees but were not used |
+| G4 | the states themselves | **done for the skeleton except talk**: idle, idle_b, walk, alert, hostile, attack_a (sword), attack_b (shield bash), damage, at 8 facings = 33 frames per facing, 264 in all. Poses are authored by me and unreviewed for taste |
+| G5 | flash primitive | **done**: `flash: [r,g,b]` on a frame, renderer sets every visible texel to it, the palette gate accepts a declared colour. Only the shield's orange-red is used; a white flash needs a white in the palette |
+| G6 | state schema / manifest | **partly**: `fullset_manifest.json` maps every (state, facing) to its frame range, fps, loop, holds, and an attack's commit frame, and groups states by kind. No transitions, no interruption rules |
+| G7 | facing-aware gates | **mostly**: `holes` uses the frame's own view and now separates thin cracks from wide windows; new `facings` gate; `volume` and `variant` fixed for yaw. No Lua mirror, so `agree` does not apply |
+| G8 | generalising segmentation / handed items | **not started.** Seed proposal still uses the red-family colour rule and biped height fractions |
+| G9 | generated pose sequences | unchanged: not consistent; the rig is the animation engine |
+| G10 | retry / cleanup | unchanged |
+| G11 | engine side | untouched (game project) |
+
+**Numbers, full set (264 frames):** 13 of 15 gates pass. `holes` fails: 67 frames report a thin crack (25 of them a
+single texel), concentrated in the patched-mirror facings (315 degrees: 22 frames, 225: 10) and in the states with
+big rotations (attack_a 21, hostile 18, damage 9, attack_b 8). `agree` is skipped. The three main rigs are at 15 of 15.
+
+**What I would look at first in the morning:** `data/diffusion/skeleton_fullset_overview.png` (8 states x 8 facings) and
+the two GIFs (`skeleton_walk_8facings.gif`, `skeleton_attack_8facings.gif`), then the 315-degree column, which is the weakest.
+
+**What did not work or is unresolved:**
+- Cracks at the shoulder seam of patched-mirror views: the shield and arms are drawn unmirrored while their parent
+  torso is mirrored, so a seam opens whenever the pose rotates. More underlap did not fix it (65 -> 63 -> 67 frames
+  across three attempts); it is structural. Options: make the handed parts children of a mirrored anchor, or author
+  those views' arms as their own variants.
+- Two fixes I expected to help did nothing measurable (underlap sized for the new poses; underlap sized for the view's
+  own pivots). Both are kept because they are correct, but they are not what is causing the cracks.
+- Per-view pivots reduced detached pieces modestly, and the floating foot fragments in profile come from the
+  generated leg art.
