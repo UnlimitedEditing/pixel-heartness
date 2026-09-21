@@ -34,9 +34,9 @@ r["views"] = [
     {"name": "v90", "angle": 90, "variant": "v90", "mirror": False},
     {"name": "v135", "angle": 135, "variant": "v135", "mirror": False},
     {"name": "v180", "angle": 180, "variant": "v180", "mirror": False},
-    {"name": "v135m", "angle": 225, "variant": "v135", "mirror": True, "patch_handed": True},
+    {"name": "v135m", "angle": 225, "variant": "v135", "mirror": True},
     {"name": "v90m", "angle": 270, "variant": "v90", "mirror": True},
-    {"name": "v45m", "angle": 315, "variant": "v45", "mirror": True, "patch_handed": True},
+    {"name": "v45m", "angle": 315, "variant": "v45", "mirror": True},
 ]
 r["states"] = [{"name": "turn", "fps": 8, "loop": True, "min_distinct": 0.3,
                 "frames": [{"yaw": a} for a in range(0, 360, 15)]}]

@@ -4692,8 +4692,7 @@
       "name": "v135m",
       "angle": 225,
       "variant": "v135",
-      "mirror": true,
-      "patch_handed": true
+      "mirror": true
     },
     {
       "name": "v90m",
@@ -4705,8 +4704,7 @@
       "name": "v45m",
       "angle": 315,
       "variant": "v45",
-      "mirror": true,
-      "patch_handed": true
+      "mirror": true
     }
   ],
   "view_pivots": "views/pivots.json"
