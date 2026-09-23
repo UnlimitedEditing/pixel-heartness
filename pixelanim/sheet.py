@@ -62,9 +62,23 @@ def outline_of(mask: np.ndarray) -> np.ndarray:
 
 # ----------------------------------------------------------------- grid view
 
+def unseeded(rig):
+    """A new rig has no seeds yet, and the grid is where they are read from."""
+    return any(not p.get("seeds") and "rect" not in p for p in rig.parts)
+
+
+def bare(rig):
+    """The source placed in the cell, uncut: enough for the grid and the colour map."""
+    rgba, _ = riglib.place_in_cell(Image.open(rig.path_of("source")), rig.cell)
+    return dict(rgba=rgba, opaque=riglib.binary_alpha(rgba), axis_x=rig.data.get("symmetry_x"))
+
+
 def view_grid(rig, args):
-    res = segment.segment(rig, args.underlap, args.colour_lambda, args.fill,
-                          args.extend_outside, args.symmetry_x, quiet=True, allow_bad_seeds=True)
+    if unseeded(rig):
+        res = bare(rig)
+    else:
+        res = segment.segment(rig, args.underlap, args.colour_lambda, args.fill,
+                              args.extend_outside, args.symmetry_x, quiet=True, allow_bad_seeds=True)
     CW, CH = rig.cell
     S, M = args.zoom, 34
     img = Image.new("RGB", (CW * S + M, CH * S + M), BG)
@@ -84,7 +98,7 @@ def view_grid(rig, args):
             d.text((4, M + y * S - 6), str(y), fill=INK, font=f)
 
     # part boundaries in their label colour, then pivots
-    for p in rig.parts:
+    for p in rig.parts if "lab" in res else []:
         col = segment.PALETTE[rig.z[p["name"]] % len(segment.PALETTE)]
         edge = outline_of(res["lab"] == res["idx"][p["name"]])
         for yy, xx in zip(*np.where(edge)):
@@ -98,6 +112,8 @@ def view_grid(rig, args):
         d.text((cx + S + 2, cy - 7), "%s (%d,%d)" % (p["name"], px, py), fill=(255, 255, 255), font=f)
 
     ax = res["axis_x"]
+    if ax is None:
+        return img
     d.line([(M + ax * S, M), (M + ax * S, M + CH * S)], fill=(90, 200, 255), width=2)
     d.text((M + ax * S + 3, M + 3), "symmetry_x=%g" % ax, fill=(90, 200, 255), font=f)
     return img
@@ -177,8 +193,13 @@ def view_map(rig, args, parts_dir):
     took a strip of the shield with it. The colour map makes that a typo you can
     see. Rendering both is cheap; guessing is not.
     """
-    res = segment.segment(rig, int(rig.data.get("underlap", 6)), args.colour_lambda,
-                          args.fill, args.extend_outside, args.symmetry_x, quiet=True, allow_bad_seeds=True)
+    if unseeded(rig):
+        if args.what != "colours":
+            raise SystemExit("sheet: parts have no seeds yet; `map --what colours` and `grid` work without them")
+        res = bare(rig)
+    else:
+        res = segment.segment(rig, int(rig.data.get("underlap", 6)), args.colour_lambda,
+                              args.fill, args.extend_outside, args.symmetry_x, quiet=True, allow_bad_seeds=True)
     CW, CH = rig.cell
     rgba, opaque = res["rgba"], res["opaque"]
     lines = []

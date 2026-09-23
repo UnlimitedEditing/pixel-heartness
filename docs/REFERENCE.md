@@ -20,7 +20,7 @@ uncovered exactly when the occluder swings away and the gap would otherwise open
       |  render.py         pose and composite                 (fast path)
       |  rig.lua mode=import + mode=build (Aseprite path, for hand touch-ups)
 <rig dir>/out/<name>_strip.png + .json  frame strip + tag table -> the packer
-      |  checks.py         ten mechanical gates
+      |  checks.py         fifteen mechanical gates
       |  sheet.py          look at it
 ```
 
@@ -277,12 +277,12 @@ something the renderer would not actually produce.
 
 ## Rig file
 
-`rigs/<name>.json`. Coordinates are cell-space texels, y down, positive `rot` clockwise.
+Any path, e.g. `examples/<name>/rig.json`; `name`, `source`, `cell`, `parts_file`, `anim_file` and `strip_file` are required. Coordinates are cell-space texels, y down, positive `rot` clockwise.
 
 - top level: `cell`, `underlap`, `symmetry_x`, `ground_lock`, `airborne_states`
 - `parts` — **listed backmost first; that order is the z order.** `seeds` cut it, `pivot` is
   the joint it rotates about, `parent` builds the FK chain, `mirror_of` names its bilateral
-  twin, `underlap`/`fill`/`extend_outside` override the defaults. `rect` is legacy.
+  twin, `underlap`/`fill`/`extend_outside` override the defaults. `rect` is legacy and optional when `seeds` are given.
 - `states[].frames[].pose` — per part `{rot, dx, dy, sx, sy}`, all optional, all relative to
   rest. `hold` lengthens a frame's duration rather than duplicating it.
 
@@ -309,12 +309,12 @@ stamp beside the parts file, and `build` refuses to run on a mismatch.
 ## Wired up
 
 ```bash
-ASE="<path to Aseprite>"
-RIG=<game project root>/examples/skeleton_warrior/rig.json
+ASE="<path to Aseprite>"; UE="<UE engine root>"; PROJ="<game project root>"
+RIG=$PROJ/examples/skeleton_warrior/rig.json
 python pixelanim/segment.py $RIG && python pixelanim/render.py $RIG && python pixelanim/checks.py $RIG
 python Tools/make_placeholder_sprites.py --pack-only
-"<UE engine root>/Engine/Build/BatchFiles/Build.bat" MyGameEditor Win64 Development -Project=<game project root>/MyGame.uproject
-"<UE engine root>/Engine/Binaries/Win64/UnrealEditor-Cmd.exe" <game project root>/MyGame.uproject -run=pythonscript -script=<game project root>/Tools/make_sprite_material.py
+"$UE/Engine/Build/BatchFiles/Build.bat" MyGameEditor Win64 Development -Project=$PROJ/MyGame.uproject
+"$UE/Engine/Binaries/Win64/UnrealEditor-Cmd.exe" $PROJ/MyGame.uproject -run=pythonscript -script=$PROJ/Tools/make_sprite_material.py
 ```
 
 The build is needed because the rect table is C++, and the editor must be closed for the

@@ -49,9 +49,12 @@ def rect_cores(rig, opaque):
     CW, CH = rig.cell
     rects = {}
     for p in rig.parts:
-        x, y, w, h = p["rect"]
         m = np.zeros((CH, CW), dtype=bool)
-        m[max(0, y):min(CH, y + h), max(0, x):min(CW, x + w)] = True
+        if "rect" in p:
+            x, y, w, h = p["rect"]
+            m[max(0, y):min(CH, y + h), max(0, x):min(CW, x + w)] = True
+        elif not p.get("seeds"):
+            raise SystemExit("segment: part " + p["name"] + " has neither seeds nor a rect")
         rects[p["name"]] = m
 
     cores, how = {}, {}
