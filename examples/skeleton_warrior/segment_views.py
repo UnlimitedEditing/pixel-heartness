@@ -144,7 +144,7 @@ def pivots_from_lab(lab, idx, base_parts):
 
 def view_rig(name, seeds, pivots=None, underlap=4):
     base = json.loads((HERE / "rig_2bone.json").read_text(encoding="utf-8"))
-    rig = {"name": "view_" + name, "source": str((HERE / "views" / ("reg_%s.png" % name)).as_posix()),
+    rig = {"name": "view_" + name, "source": "reg_%s.png" % name,     # relative to the rig, which lives in views/
            "parts_file": "out/_v.aseprite", "anim_file": "out/_v_anim.aseprite", "strip_file": "out/_v.png",
            "cell": [48, 48], "underlap": underlap, "symmetry_x": AXIS, "parts": [], "states": UNDER}
     for p in base["parts"]:

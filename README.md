@@ -122,7 +122,7 @@ only a look can tell you which one reads as breathing and not a gesture.
 | **Solid** | Segmentation with seed validation, derived underlap, mirror rebuild, FK render, ground lock, squash/stretch, chain lag, part variants, colour flash, 15 gates, text/grid/contact/GIF views, retargeting a 2D keypoint clip into a state. The front-facing rigs pass 15/15. |
 | **Experimental** | Eight facings (`yaw`). Side and back art for each part comes from generated turnaround views, corrected onto the sprite's grid and palette (`pixelize.py`). The full skeleton set is 264 frames and passes 14/15 gates. |
 | **Known defects** | At some facings, thin one-texel cracks open at the shoulder seam when an arm swings (the `holes` gate fails on those frames). The rear views read as a dark mass. There is no jaw or face variant yet, so no talk state. The eight-facing code has no Aseprite (Lua) mirror, so `agree` is skipped there. See [docs/DEFECTS.md](docs/DEFECTS.md). |
-| **Not yet** | Seed proposal that generalises past bipeds, transitions and interruption rules between states, and a license (see below). |
+| **Not yet** | Seed proposal that generalises past bipeds, transitions and interruption rules between states. |
 
 ## Layout
 
@@ -161,4 +161,4 @@ Python package is still called `pixelanim`, its original working name.
 
 ## License
 
-None chosen yet. Until one is, all rights are reserved by the author.
+[MIT](LICENSE).
