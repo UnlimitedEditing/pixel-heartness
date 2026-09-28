@@ -1,0 +1,1312 @@
+{
+  "name": "hobo",
+  "source": "hobo.png",
+  "parts_file": "out/hobo_parts.aseprite",
+  "anim_file": "out/hobo_anim.aseprite",
+  "strip_file": "out/hobo_strip.png",
+  "cell": [
+    48,
+    48
+  ],
+  "underlap": 6,
+  "symmetry_x": 24,
+  "parts": [
+    {
+      "name": "bottle",
+      "parent": "arm_l",
+      "rect": [
+        11,
+        25,
+        6,
+        11
+      ],
+      "pivot": [
+        14,
+        29
+      ],
+      "seeds": [
+        [
+          14,
+          30
+        ],
+        [
+          13,
+          33
+        ]
+      ]
+    },
+    {
+      "name": "arm_l",
+      "parent": "torso",
+      "rect": [
+        13,
+        20,
+        6,
+        11
+      ],
+      "pivot": [
+        16,
+        22
+      ],
+      "seeds": [
+        [
+          15,
+          23
+        ],
+        [
+          15,
+          28
+        ],
+        [
+          14,
+          29
+        ]
+      ]
+    },
+    {
+      "name": "leg_r",
+      "parent": "pelvis",
+      "rect": [
+        25,
+        33,
+        7,
+        13
+      ],
+      "pivot": [
+        28,
+        33
+      ],
+      "seeds": [
+        [
+          28,
+          37
+        ],
+        [
+          28,
+          44
+        ]
+      ]
+    },
+    {
+      "name": "leg_l",
+      "parent": "pelvis",
+      "rect": [
+        18,
+        33,
+        6,
+        13
+      ],
+      "pivot": [
+        21,
+        33
+      ],
+      "seeds": [
+        [
+          21,
+          37
+        ],
+        [
+          21,
+          44
+        ]
+      ]
+    },
+    {
+      "name": "pelvis",
+      "rect": [
+        19,
+        29,
+        11,
+        5
+      ],
+      "pivot": [
+        24,
+        31
+      ],
+      "seeds": [
+        [
+          24,
+          31
+        ],
+        [
+          22,
+          30
+        ]
+      ]
+    },
+    {
+      "name": "torso",
+      "parent": "pelvis",
+      "rect": [
+        18,
+        19,
+        13,
+        11
+      ],
+      "pivot": [
+        24,
+        28
+      ],
+      "seeds": [
+        [
+          24,
+          24
+        ],
+        [
+          21,
+          22
+        ],
+        [
+          27,
+          26
+        ],
+        [
+          28,
+          20
+        ],
+        [
+          20,
+          20
+        ]
+      ]
+    },
+    {
+      "name": "head",
+      "parent": "torso",
+      "rect": [
+        20,
+        10,
+        9,
+        11
+      ],
+      "pivot": [
+        24,
+        18
+      ],
+      "seeds": [
+        [
+          24,
+          15
+        ],
+        [
+          24,
+          11
+        ]
+      ]
+    },
+    {
+      "name": "jaw",
+      "parent": "head",
+      "rect": [
+        20,
+        16,
+        9,
+        6
+      ],
+      "pivot": [
+        24,
+        17
+      ],
+      "seeds": [
+        [
+          24,
+          18
+        ],
+        [
+          22,
+          19
+        ]
+      ],
+      "variants": {
+        "open": "hobo_jaw_open.png",
+        "wide": "hobo_jaw_wide.png",
+        "round": "hobo_jaw_round.png"
+      },
+      "mode": "orthogonal_stamp"
+    },
+    {
+      "name": "eyes",
+      "parent": "head",
+      "rect": [
+        21,
+        12,
+        7,
+        3
+      ],
+      "pivot": [
+        24,
+        13
+      ],
+      "seeds": [
+        [
+          23,
+          13
+        ],
+        [
+          26,
+          13
+        ]
+      ],
+      "variants": {
+        "blink": "hobo_eyes_blink.png",
+        "squint": "hobo_eyes_squint.png"
+      },
+      "mode": "orthogonal_stamp"
+    },
+    {
+      "name": "cap",
+      "parent": "head",
+      "rect": [
+        19,
+        7,
+        12,
+        6
+      ],
+      "pivot": [
+        24,
+        11
+      ],
+      "seeds": [
+        [
+          24,
+          9
+        ],
+        [
+          22,
+          8
+        ]
+      ],
+      "variants": {
+        "tip": "hobo_cap_tip.png"
+      }
+    },
+    {
+      "name": "arm_r",
+      "parent": "torso",
+      "rect": [
+        29,
+        20,
+        7,
+        12
+      ],
+      "pivot": [
+        30,
+        21
+      ],
+      "seeds": [
+        [
+          31,
+          23
+        ],
+        [
+          33,
+          29
+        ]
+      ]
+    }
+  ],
+  "states": [
+    {
+      "name": "idle",
+      "fps": 4,
+      "loop": true,
+      "min_distinct": 0.5,
+      "frames": [
+        {
+          "pose": {
+            "torso": {
+              "dy": 0
+            },
+            "head": {
+              "rot": 0
+            },
+            "bottle": {
+              "rot": 0
+            }
+          }
+        },
+        {
+          "pose": {
+            "torso": {
+              "dy": 1
+            },
+            "head": {
+              "rot": 2
+            },
+            "eyes": {
+              "variant": "blink"
+            }
+          }
+        },
+        {
+          "pose": {
+            "torso": {
+              "dy": 0
+            },
+            "head": {
+              "rot": 0
+            }
+          }
+        },
+        {
+          "pose": {
+            "torso": {
+              "dy": -1
+            },
+            "head": {
+              "rot": -1
+            },
+            "bottle": {
+              "rot": -2
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "talk",
+      "fps": 6,
+      "loop": true,
+      "min_distinct": 0.1,
+      "frames": [
+        {
+          "pose": {
+            "head": {
+              "rot": 2
+            },
+            "jaw": {
+              "variant": "open"
+            },
+            "torso": {
+              "dy": 0
+            },
+            "arm_r": {
+              "rot": -4
+            }
+          }
+        },
+        {
+          "pose": {
+            "head": {
+              "rot": 3
+            },
+            "jaw": {
+              "variant": "wide"
+            },
+            "torso": {
+              "dy": 1
+            },
+            "arm_r": {
+              "rot": -8
+            }
+          }
+        },
+        {
+          "pose": {
+            "head": {
+              "rot": 1
+            },
+            "jaw": {
+              "variant": "open"
+            },
+            "cap": {
+              "variant": "tip"
+            },
+            "arm_r": {
+              "rot": -4
+            }
+          }
+        },
+        {
+          "pose": {
+            "head": {
+              "rot": -2
+            },
+            "jaw": {
+              "variant": "open"
+            },
+            "eyes": {
+              "variant": "blink"
+            },
+            "arm_r": {
+              "rot": 0
+            }
+          }
+        },
+        {
+          "pose": {
+            "head": {
+              "rot": 2
+            },
+            "jaw": {
+              "variant": "wide"
+            },
+            "arm_r": {
+              "rot": 4
+            },
+            "torso": {
+              "dy": -1
+            }
+          }
+        },
+        {
+          "pose": {
+            "head": {
+              "rot": 0
+            },
+            "jaw": {
+              "dy": 0
+            },
+            "arm_r": {
+              "rot": 2
+            },
+            "torso": {
+              "dy": 0
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "chug",
+      "fps": 5,
+      "loop": false,
+      "min_distinct": 0.5,
+      "frames": [
+        {
+          "pose": {
+            "arm_l": {
+              "rot": -5,
+              "dx": 2,
+              "dy": -2
+            },
+            "bottle": {
+              "rot": -10
+            }
+          }
+        },
+        {
+          "pose": {
+            "arm_l": {
+              "rot": -11,
+              "dx": 3,
+              "dy": -4
+            },
+            "bottle": {
+              "rot": -45
+            },
+            "head": {
+              "rot": -4
+            },
+            "jaw": {
+              "variant": "open"
+            }
+          }
+        },
+        {
+          "pose": {
+            "arm_l": {
+              "rot": -11,
+              "dx": 3,
+              "dy": -5
+            },
+            "bottle": {
+              "rot": -60
+            },
+            "head": {
+              "rot": -5
+            },
+            "jaw": {
+              "variant": "wide"
+            },
+            "cap": {
+              "variant": "tip"
+            }
+          },
+          "hold": 2
+        },
+        {
+          "pose": {
+            "arm_l": {
+              "rot": -4,
+              "dx": 1,
+              "dy": -2
+            },
+            "head": {
+              "rot": 2
+            },
+            "eyes": {
+              "variant": "squint"
+            }
+          }
+        },
+        {
+          "pose": {
+            "arm_l": {
+              "rot": 0
+            },
+            "bottle": {
+              "rot": 0
+            },
+            "head": {
+              "rot": 0
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "walk",
+      "fps": 6,
+      "loop": true,
+      "min_distinct": 0.5,
+      "frames": [
+        {
+          "pose": {
+            "leg_l": {
+              "rot": 6,
+              "dx": 1
+            },
+            "leg_r": {
+              "rot": -6,
+              "dx": -1
+            },
+            "arm_r": {
+              "rot": -8
+            },
+            "arm_l": {
+              "rot": 4
+            },
+            "torso": {
+              "dy": 0
+            }
+          }
+        },
+        {
+          "pose": {
+            "leg_l": {
+              "rot": 0
+            },
+            "leg_r": {
+              "rot": 0
+            },
+            "torso": {
+              "dy": -1
+            }
+          }
+        },
+        {
+          "pose": {
+            "leg_l": {
+              "rot": -6,
+              "dx": -1
+            },
+            "leg_r": {
+              "rot": 6,
+              "dx": 1
+            },
+            "arm_r": {
+              "rot": 8
+            },
+            "arm_l": {
+              "rot": -4
+            },
+            "torso": {
+              "dy": 0
+            }
+          }
+        },
+        {
+          "pose": {
+            "leg_l": {
+              "rot": 0
+            },
+            "leg_r": {
+              "rot": 0
+            },
+            "torso": {
+              "dy": -1
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "punch",
+      "fps": 8,
+      "loop": false,
+      "min_distinct": 0.5,
+      "frames": [
+        {
+          "pose": {
+            "torso": {
+              "rot": -4,
+              "dx": -1
+            },
+            "head": {
+              "rot": -2
+            },
+            "arm_r": {
+              "rot": -12,
+              "dx": -2
+            },
+            "jaw": {
+              "variant": "open"
+            }
+          }
+        },
+        {
+          "pose": {
+            "torso": {
+              "rot": 4,
+              "dx": 2
+            },
+            "head": {
+              "rot": 2
+            },
+            "arm_r": {
+              "rot": 14,
+              "dx": 3,
+              "dy": -1
+            },
+            "jaw": {
+              "variant": "wide"
+            },
+            "eyes": {
+              "variant": "squint"
+            }
+          },
+          "hold": 1
+        },
+        {
+          "pose": {
+            "torso": {
+              "rot": 1
+            },
+            "head": {
+              "rot": 0
+            },
+            "arm_r": {
+              "rot": 4,
+              "dx": 1
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "flinch",
+      "fps": 6,
+      "loop": false,
+      "min_distinct": 0.5,
+      "frames": [
+        {
+          "squash": 0.08,
+          "flash": [
+            214,
+            82,
+            74
+          ],
+          "pose": {
+            "torso": {
+              "rot": -5,
+              "dx": -1
+            },
+            "head": {
+              "rot": -4
+            },
+            "eyes": {
+              "variant": "squint"
+            },
+            "jaw": {
+              "variant": "wide"
+            }
+          }
+        },
+        {
+          "pose": {
+            "torso": {
+              "rot": -3
+            },
+            "head": {
+              "rot": -2
+            },
+            "eyes": {
+              "variant": "squint"
+            },
+            "cap": {
+              "variant": "tip"
+            }
+          }
+        },
+        {
+          "pose": {
+            "torso": {
+              "rot": 0
+            },
+            "head": {
+              "rot": 0
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "speech",
+      "fps": 12,
+      "loop": false,
+      "min_distinct": 0.0,
+      "frames": [
+        {
+          "pose": {
+            "torso": {
+              "dy": 0
+            },
+            "head": {
+              "dy": 0
+            },
+            "arm_r": {
+              "rot": 0
+            }
+          }
+        },
+        {
+          "pose": {
+            "torso": {
+              "dy": -1
+            },
+            "head": {
+              "dy": -1
+            },
+            "eyes": {
+              "variant": "squint"
+            }
+          }
+        },
+        {
+          "pose": {
+            "torso": {
+              "dy": -1
+            },
+            "head": {
+              "dy": -1
+            },
+            "jaw": {
+              "variant": "open"
+            },
+            "arm_r": {
+              "rot": -2
+            }
+          }
+        },
+        {
+          "pose": {
+            "torso": {
+              "dy": 0
+            },
+            "head": {
+              "dy": 0
+            },
+            "jaw": {
+              "variant": "wide"
+            },
+            "arm_r": {
+              "rot": -4
+            }
+          }
+        },
+        {
+          "pose": {
+            "torso": {
+              "dy": 0
+            },
+            "head": {
+              "dy": 0
+            },
+            "jaw": {
+              "variant": "wide"
+            },
+            "arm_r": {
+              "rot": -6
+            },
+            "cap": {
+              "variant": "tip"
+            }
+          }
+        },
+        {
+          "pose": {
+            "torso": {
+              "dy": 0
+            },
+            "head": {
+              "dy": 0
+            },
+            "jaw": {
+              "variant": "open"
+            },
+            "arm_r": {
+              "rot": -4
+            }
+          }
+        },
+        {
+          "pose": {
+            "torso": {
+              "dy": 0
+            },
+            "head": {
+              "dy": 0
+            },
+            "arm_r": {
+              "rot": -2
+            }
+          }
+        },
+        {
+          "pose": {
+            "torso": {
+              "dy": 1
+            },
+            "head": {
+              "dy": 1
+            },
+            "jaw": {
+              "variant": "wide"
+            },
+            "arm_r": {
+              "rot": -1
+            }
+          }
+        },
+        {
+          "pose": {
+            "torso": {
+              "dy": 1
+            },
+            "head": {
+              "dy": 1
+            },
+            "jaw": {
+              "variant": "open"
+            },
+            "arm_r": {
+              "rot": 0
+            }
+          }
+        },
+        {
+          "pose": {
+            "torso": {
+              "dy": 0
+            },
+            "head": {
+              "dy": 0
+            },
+            "eyes": {
+              "variant": "blink"
+            }
+          }
+        },
+        {
+          "pose": {
+            "torso": {
+              "dy": -1
+            },
+            "head": {
+              "dy": -1
+            },
+            "bottle": {
+              "rot": -1
+            }
+          }
+        },
+        {
+          "pose": {
+            "torso": {
+              "dy": 0
+            },
+            "head": {
+              "dy": 0
+            },
+            "bottle": {
+              "rot": -2
+            }
+          }
+        },
+        {
+          "pose": {
+            "torso": {
+              "dy": 0
+            },
+            "head": {
+              "dy": 0
+            },
+            "bottle": {
+              "rot": -1
+            }
+          }
+        },
+        {
+          "pose": {
+            "torso": {
+              "dy": 0
+            },
+            "head": {
+              "dy": 0
+            },
+            "bottle": {
+              "rot": 0
+            }
+          }
+        },
+        {
+          "pose": {
+            "torso": {
+              "dy": 0
+            },
+            "head": {
+              "dy": 0
+            },
+            "jaw": {
+              "variant": "open"
+            },
+            "arm_r": {
+              "rot": 1
+            }
+          }
+        },
+        {
+          "pose": {
+            "torso": {
+              "dy": 1
+            },
+            "head": {
+              "dy": 1
+            },
+            "jaw": {
+              "variant": "round"
+            },
+            "arm_r": {
+              "rot": 2
+            }
+          }
+        },
+        {
+          "pose": {
+            "torso": {
+              "dy": 1
+            },
+            "head": {
+              "dy": 1
+            },
+            "jaw": {
+              "variant": "round"
+            },
+            "arm_r": {
+              "rot": 3
+            }
+          }
+        },
+        {
+          "pose": {
+            "torso": {
+              "dy": 0
+            },
+            "head": {
+              "dy": 0
+            },
+            "arm_r": {
+              "rot": 2
+            }
+          }
+        },
+        {
+          "pose": {
+            "torso": {
+              "dy": 0
+            },
+            "head": {
+              "dy": 0
+            },
+            "jaw": {
+              "variant": "open"
+            },
+            "arm_r": {
+              "rot": 3
+            }
+          }
+        },
+        {
+          "pose": {
+            "torso": {
+              "dy": 1
+            },
+            "head": {
+              "dy": 1
+            },
+            "jaw": {
+              "variant": "open"
+            },
+            "arm_r": {
+              "rot": 4
+            }
+          }
+        },
+        {
+          "pose": {
+            "torso": {
+              "dy": 1
+            },
+            "head": {
+              "dy": 1
+            },
+            "jaw": {
+              "variant": "wide"
+            },
+            "arm_r": {
+              "rot": 5
+            },
+            "cap": {
+              "variant": "tip"
+            }
+          }
+        },
+        {
+          "pose": {
+            "torso": {
+              "dy": 0
+            },
+            "head": {
+              "dy": 0
+            },
+            "arm_r": {
+              "rot": 4
+            }
+          }
+        },
+        {
+          "pose": {
+            "torso": {
+              "dy": 1
+            },
+            "head": {
+              "dy": 1
+            },
+            "jaw": {
+              "variant": "wide"
+            },
+            "arm_r": {
+              "rot": 3
+            }
+          }
+        },
+        {
+          "pose": {
+            "torso": {
+              "dy": 1
+            },
+            "head": {
+              "dy": 1
+            },
+            "jaw": {
+              "variant": "open"
+            },
+            "arm_r": {
+              "rot": 2
+            }
+          }
+        },
+        {
+          "pose": {
+            "torso": {
+              "dy": 0
+            },
+            "head": {
+              "dy": 0
+            },
+            "eyes": {
+              "variant": "squint"
+            },
+            "arm_r": {
+              "rot": 1
+            }
+          }
+        },
+        {
+          "pose": {
+            "torso": {
+              "dy": 0
+            },
+            "head": {
+              "dy": 0
+            },
+            "jaw": {
+              "variant": "wide"
+            },
+            "arm_r": {
+              "rot": -1
+            }
+          }
+        },
+        {
+          "pose": {
+            "torso": {
+              "dy": 1
+            },
+            "head": {
+              "dy": 1
+            },
+            "jaw": {
+              "variant": "open"
+            },
+            "arm_r": {
+              "rot": -2
+            }
+          }
+        },
+        {
+          "pose": {
+            "torso": {
+              "dy": 1
+            },
+            "head": {
+              "dy": 1
+            },
+            "jaw": {
+              "variant": "wide"
+            },
+            "arm_r": {
+              "rot": -3
+            },
+            "cap": {
+              "variant": "tip"
+            }
+          }
+        },
+        {
+          "pose": {
+            "torso": {
+              "dy": 0
+            },
+            "head": {
+              "dy": 0
+            },
+            "jaw": {
+              "variant": "open"
+            },
+            "arm_r": {
+              "rot": -2
+            }
+          }
+        },
+        {
+          "pose": {
+            "torso": {
+              "dy": 0
+            },
+            "head": {
+              "dy": 0
+            },
+            "eyes": {
+              "variant": "blink"
+            },
+            "arm_r": {
+              "rot": -1
+            }
+          }
+        },
+        {
+          "pose": {
+            "torso": {
+              "dy": -1
+            },
+            "head": {
+              "dy": -1
+            },
+            "arm_r": {
+              "rot": -1
+            },
+            "arm_l": {
+              "rot": 1
+            }
+          }
+        },
+        {
+          "pose": {
+            "torso": {
+              "dy": -1
+            },
+            "head": {
+              "dy": -1
+            },
+            "arm_r": {
+              "rot": 1
+            },
+            "arm_l": {
+              "rot": 2
+            }
+          }
+        },
+        {
+          "pose": {
+            "torso": {
+              "dy": 0
+            },
+            "head": {
+              "dy": 0
+            },
+            "arm_r": {
+              "rot": 2
+            },
+            "arm_l": {
+              "rot": 1
+            }
+          }
+        },
+        {
+          "pose": {
+            "torso": {
+              "dy": 0
+            },
+            "head": {
+              "dy": 0
+            },
+            "arm_r": {
+              "rot": 1
+            },
+            "arm_l": {
+              "rot": 0
+            }
+          }
+        },
+        {
+          "pose": {
+            "torso": {
+              "dy": 1
+            },
+            "head": {
+              "dy": 1
+            },
+            "arm_r": {
+              "rot": 0
+            }
+          }
+        },
+        {
+          "pose": {
+            "torso": {
+              "dy": 0
+            },
+            "head": {
+              "dy": 0
+            },
+            "arm_r": {
+              "rot": 0
+            }
+          }
+        }
+      ]
+    }
+  ]
+}

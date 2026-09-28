@@ -309,16 +309,32 @@ def pose_matrix(pose: dict, pivot) -> np.ndarray:
 def world_matrix(rig: Rig, part_name: str, pose: dict, cache: dict | None = None,
                  pivots: dict | None = None) -> np.ndarray:
     """FK: a part's matrix is its parent's composed with its own local pose. `pivots` overrides
-    the rig's pivots part by part (a generated view has its own joints)."""
+    the rig's pivots part by part (a generated view has its own joints).
+    Parts with mode='orthogonal_stamp' anchor onto the parent's transformed joint in whole texels,
+    but stamp their bitmap orthogonally (0 rotation, 0 shear) to preserve pixel cluster integrity."""
     cache = {} if cache is None else cache
     if part_name in cache:
         return cache[part_name]
     part = rig.by_name[part_name]
     pv = pivots[part_name] if pivots and part_name in pivots else part["pivot"]
-    m = pose_matrix(pose.get(part_name, {}), pv)
     parent = part.get("parent")
-    if parent:
-        m = world_matrix(rig, parent, pose, cache, pivots) @ m
+    if part.get("mode") == "orthogonal_stamp" and parent:
+        pm = world_matrix(rig, parent, pose, cache, pivots)
+        px, py = float(pv[0]), float(pv[1])
+        wx = pm[0, 0] * px + pm[0, 1] * py + pm[0, 2]
+        wy = pm[1, 0] * px + pm[1, 1] * py + pm[1, 2]
+        p_own = pose.get(part_name, {})
+        dx = float(p_own.get("dx", 0.0))
+        dy = float(p_own.get("dy", 0.0))
+        tx = round(wx) + round(dx)
+        ty = round(wy) + round(dy)
+        m = np.array([[1.0, 0.0, float(tx - px)],
+                      [0.0, 1.0, float(ty - py)],
+                      [0.0, 0.0, 1.0]])
+    else:
+        m = pose_matrix(pose.get(part_name, {}), pv)
+        if parent:
+            m = world_matrix(rig, parent, pose, cache, pivots) @ m
     cache[part_name] = m
     return m
 

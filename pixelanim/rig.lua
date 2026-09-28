@@ -79,10 +79,23 @@ for _, p in ipairs(rig.parts) do partByName[p.name] = p end
 
 local function worldMatrix(part, pose, cache)
   if cache[part.name] then return cache[part.name] end
-  local m = poseMatrix(pose[part.name] or {}, part.pivot[1], part.pivot[2])
-  if part.parent then
+  local m
+  if part.mode == "orthogonal_stamp" and part.parent then
     local pp = partByName[part.parent] or fail("unknown parent " .. part.parent)
-    m = mmul(worldMatrix(pp, pose, cache), m)
+    local pm = worldMatrix(pp, pose, cache)
+    local px, py = part.pivot[1], part.pivot[2]
+    local wx, wy = mapply(pm, px, py)
+    local p_own = pose[part.name] or {}
+    local dx, dy = p_own.dx or 0, p_own.dy or 0
+    local tx = math.floor(wx + 0.5) + math.floor(dx + 0.5)
+    local ty = math.floor(wy + 0.5) + math.floor(dy + 0.5)
+    m = {1, 0, 0, 1, tx - px, ty - py}
+  else
+    m = poseMatrix(pose[part.name] or {}, part.pivot[1], part.pivot[2])
+    if part.parent then
+      local pp = partByName[part.parent] or fail("unknown parent " .. part.parent)
+      m = mmul(worldMatrix(pp, pose, cache), m)
+    end
   end
   cache[part.name] = m
   return m

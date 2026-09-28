@@ -38,12 +38,45 @@ def palette_of(sprite: Image.Image) -> np.ndarray:
     return np.unique(a[:, :, :3][op].reshape(-1, 3), axis=0)
 
 
-def background_mask(rgb: np.ndarray, thr: int = 235, speck: int = 150) -> np.ndarray:
-    """True where the pixel is background: near-white and connected to the border.
+def background_mask(img_or_arr: Image.Image | np.ndarray, thr: int = 235, speck: int = 150) -> np.ndarray:
+    """True where the pixel is background.
 
-    The near-white test runs on a lightly smoothed image, so noise on the white
-    does not read as figure, and foreground specks under `speck` pixels are
-    dropped, so a stray artefact cannot stretch the figure's bounding box."""
+    If the image has an active alpha channel (e.g. native RGBA output from qwen21
+    or edit-qwen21), transparency is extracted directly (alpha < 128) without
+    morphological dilation or near-white flood fill, keeping 1-pixel outlines and
+    highlights razor-sharp with zero white halo.
+
+    Otherwise (opaque / white background), near-white connected to the border becomes
+    transparent via flood fill on a lightly smoothed image, with noise specks dropped."""
+    if isinstance(img_or_arr, Image.Image):
+        if img_or_arr.mode in ("RGBA", "LA", "PA"):
+            a = np.array(img_or_arr.convert("RGBA"))[:, :, 3]
+            if (a < 240).any():
+                bg = a < 128
+                fg, n = ndimage.label(~bg)
+                if n and speck > 0:
+                    sizes = ndimage.sum(np.ones_like(fg), fg, index=np.arange(1, n + 1))
+                    for k in np.where(sizes < speck)[0]:
+                        bg[fg == k + 1] = True
+                return bg
+        rgb = np.array(img_or_arr.convert("RGB"))
+    elif isinstance(img_or_arr, np.ndarray):
+        if img_or_arr.ndim == 3 and img_or_arr.shape[2] == 4:
+            a = img_or_arr[:, :, 3]
+            if (a < 240).any():
+                bg = a < 128
+                fg, n = ndimage.label(~bg)
+                if n and speck > 0:
+                    sizes = ndimage.sum(np.ones_like(fg), fg, index=np.arange(1, n + 1))
+                    for k in np.where(sizes < speck)[0]:
+                        bg[fg == k + 1] = True
+                return bg
+            rgb = img_or_arr[:, :, :3]
+        else:
+            rgb = img_or_arr
+    else:
+        raise TypeError(f"Expected PIL Image or numpy array, got {type(img_or_arr)}")
+
     sm = ndimage.uniform_filter(rgb.min(axis=2).astype(np.float32), size=5)
     near = sm >= thr - 6
     lab, _ = ndimage.label(near)
@@ -69,9 +102,9 @@ def derive_palette_multi(paths, colours: int, **kw) -> np.ndarray:
     the union keeps it. Views are stacked side by side and quantised together."""
     tiles, masks = [], []
     for path in paths:
-        im = Image.open(path).convert("RGB")
-        bg = background_mask(np.array(im))
-        tiles.append(np.array(im))
+        im = Image.open(path)
+        bg = background_mask(im)
+        tiles.append(np.array(im.convert("RGB")))
         masks.append(bg)
     H = max(t.shape[0] for t in tiles)
     pad = lambda a, v: np.pad(a, ((0, H - a.shape[0]), (0, 0)) + ((0, 0),) * (a.ndim - 2), constant_values=v)
@@ -167,8 +200,7 @@ def figure_box(bg: np.ndarray):
 
 
 def texel_size(img: Image.Image, src: Image.Image) -> float:
-    rgb = np.array(img.convert("RGB"))
-    x0, y0, x1, y1 = figure_box(background_mask(rgb))
+    x0, y0, x1, y1 = figure_box(background_mask(img))
     a = np.array(src.convert("RGBA"))[:, :, 3] > 127
     rows = np.where(a.any(axis=1))[0]
     return (y1 - y0) / float(rows.max() - rows.min() + 1)
@@ -196,7 +228,7 @@ def pixelize(img: Image.Image, src, texel: float, refine: float = 0.05, palette=
     offset are searched together for the grid whose cells are purest -- most of
     each cell agreeing on one palette colour -- within `refine` of the estimate."""
     rgb = np.array(img.convert("RGB"))
-    bg = background_mask(rgb)
+    bg = background_mask(img)
     pal = palette if palette is not None else palette_of(src)
     x0, y0, x1, y1 = figure_box(bg)
     idx = snap(rgb, pal)
@@ -367,7 +399,7 @@ def main():
     args = ap.parse_args()
     if args.auto:
         img = Image.open(args.image)
-        bg = background_mask(np.array(img.convert("RGB")))
+        bg = background_mask(img)
         if args.palette_from:
             pal = derive_palette_multi([args.palette_from] + list(args.palette_also), args.auto)
         else:
@@ -420,8 +452,8 @@ def main():
         if args.height:
             # force the height, whatever the generation drew: a rear 3/4 came out 47 rows tall
             # against a 44-row front, which is invisible until a bob pushes it into the border
-            rgb0 = np.array(Image.open(args.image).convert("RGB"))
-            bx0, by0, bx1, by1 = figure_box(background_mask(rgb0))
+            img0 = Image.open(args.image)
+            bx0, by0, bx1, by1 = figure_box(background_mask(img0))
             t = (by1 - by0) / float(args.height)
             print("forced %d texels tall = %.1f px per texel" % (args.height, t))
         # the size is imposed, so only fine-tune it; the default +-5% search re-inflated a forced
