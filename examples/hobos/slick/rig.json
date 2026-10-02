@@ -1,0 +1,261 @@
+{
+  "name": "slick",
+  "cell": [
+    88,
+    96
+  ],
+  "source": "slick.png",
+  "parts_file": "slick.aseprite",
+  "strip_file": "out/slick_strip.png",
+  "parts_dir": "out/slick_parts",
+  "airborne_states": [
+    "idle",
+    "ready",
+    "speech"
+  ],
+  "ground_lock": false,
+  "damage_max": 0.5,
+  "parts": [
+    {
+      "name": "head",
+      "parent": "torso",
+      "pivot": [
+        48,
+        33
+      ]
+    },
+    {
+      "name": "torso",
+      "pivot": [
+        48,
+        60
+      ]
+    },
+    {
+      "name": "eyes",
+      "parent": "head",
+      "pivot": [
+        52,
+        35
+      ],
+      "mode": "orthogonal_stamp",
+      "variants": {
+        "blink": "slick_eyes_blink.png",
+        "squint": "slick_eyes_squint.png"
+      }
+    },
+    {
+      "name": "mouth",
+      "parent": "head",
+      "pivot": [
+        54,
+        47
+      ],
+      "mode": "orthogonal_stamp",
+      "variants": {
+        "open": "slick_mouth_open.png",
+        "round": "slick_mouth_round.png",
+        "wide": "slick_mouth_wide.png"
+      }
+    }
+  ],
+  "states": [
+    {
+      "name": "idle",
+      "fps": 6,
+      "loop": true,
+      "min_distinct": 0.0,
+      "frames": [
+        {
+          "pose": {
+            "torso": {
+              "dy": 0
+            },
+            "head": {
+              "dy": 0
+            }
+          }
+        },
+        {
+          "pose": {
+            "torso": {
+              "dy": -1
+            },
+            "head": {
+              "dy": -1
+            }
+          }
+        },
+        {
+          "pose": {
+            "torso": {
+              "dy": -1
+            },
+            "head": {
+              "dy": -1
+            },
+            "eyes": {
+              "variant": "blink"
+            }
+          }
+        },
+        {
+          "pose": {
+            "torso": {
+              "dy": 0
+            },
+            "head": {
+              "dy": 0
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "ready",
+      "fps": 8,
+      "loop": true,
+      "min_distinct": 0.0,
+      "frames": [
+        {
+          "pose": {
+            "torso": {
+              "dy": 0
+            },
+            "head": {
+              "dy": 0,
+              "rot": 1
+            }
+          }
+        },
+        {
+          "pose": {
+            "torso": {
+              "dy": 1
+            },
+            "head": {
+              "dy": 1,
+              "rot": -1
+            },
+            "eyes": {
+              "variant": "squint"
+            }
+          }
+        },
+        {
+          "pose": {
+            "torso": {
+              "dy": 0
+            },
+            "head": {
+              "dy": 0,
+              "rot": 0
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "speech",
+      "fps": 12,
+      "loop": true,
+      "min_distinct": 0.0,
+      "frames": [
+        {
+          "pose": {
+            "torso": {
+              "dy": 0
+            },
+            "head": {
+              "dy": 0
+            },
+            "mouth": {
+              "variant": "open"
+            }
+          }
+        },
+        {
+          "pose": {
+            "torso": {
+              "dy": -1
+            },
+            "head": {
+              "dy": -1,
+              "rot": 1
+            },
+            "mouth": {
+              "variant": "wide"
+            }
+          }
+        },
+        {
+          "pose": {
+            "torso": {
+              "dy": -1
+            },
+            "head": {
+              "dy": -1,
+              "rot": 1
+            },
+            "mouth": {
+              "variant": "round"
+            }
+          }
+        },
+        {
+          "pose": {
+            "torso": {
+              "dy": 0
+            },
+            "head": {
+              "dy": 0
+            },
+            "mouth": {
+              "variant": "wide"
+            },
+            "eyes": {
+              "variant": "blink"
+            }
+          }
+        },
+        {
+          "pose": {
+            "torso": {
+              "dy": 1
+            },
+            "head": {
+              "dy": 1,
+              "rot": -1
+            },
+            "mouth": {
+              "variant": "open"
+            }
+          }
+        },
+        {
+          "pose": {
+            "torso": {
+              "dy": 0
+            },
+            "head": {
+              "dy": 0
+            },
+            "mouth": {
+              "variant": "round"
+            }
+          }
+        },
+        {
+          "pose": {
+            "torso": {
+              "dy": 0
+            },
+            "head": {
+              "dy": 0
+            }
+          }
+        }
+      ]
+    }
+  ]
+}
