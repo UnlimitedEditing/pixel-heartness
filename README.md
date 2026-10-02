@@ -9,8 +9,10 @@
   <img src="docs/media/hero_walk_turn.gif" alt="A pixel-art skeleton warrior walking while turning through eight facings" width="256">
 </p>
 
-> **Early build.** The core pipeline (cut, pose, gate) is solid and passes every gate on three subjects. The
-> eight-facing turnaround is experimental: it works, and it has known defects, listed [below](#status).
+> **Early build.** The core pipeline (cut, pose, gate) is solid and passes every gate on five subjects,
+> including a speaking, blinking battle bust. The eight-facing turnaround is experimental: it works, and it
+> has known defects, listed [below](#status). The four-character `hobos/` set is work in progress and still
+> fails one gate each.
 
 Pixel Heartness is a harness that lets a coding agent animate pixel art without ever painting a pixel.
 The agent writes **poses as JSON**. Deterministic code **moves the texels the artist already drew**.
@@ -41,6 +43,12 @@ and (ideally) look at an image can drive it. [AGENTS.md](AGENTS.md) is the manua
   stretch; the wisp's tail trails its head through a lag chain.</sub>
 </p>
 
+<p align="center">
+  <img src="docs/media/trainer_speech.gif" alt="An 83-texel Pokemon DS-style trainer bust blinking and speaking with six visemes" width="260"><br>
+  <sub>Faces get their own mechanism. This 83-texel trainer bust blinks and lip-syncs to a voice clip using
+  the six-viseme method below. Eyes and mouth are swapped in as whole authored variants, never rotated.</sub>
+</p>
+
 ## How it works
 
 <p align="center">
@@ -63,7 +71,13 @@ and (ideally) look at an image can drive it. [AGENTS.md](AGENTS.md) is the manua
    on the floor row, and consecutive keys must read as different silhouettes. Other gates catch
    floating strays, sub-texel drift and small features destroyed by rotation. The full list is in
    [docs/REFERENCE.md](docs/REFERENCE.md#gates--checkspy).
-5. **Look.** `sheet.py` renders numbered grids, contact sheets and GIFs. It also prints **text maps**
+5. **Stamp faces.** Features under about 16 texels (eyes, mouth, jaw) are never rotated: nearest-neighbour
+   rotation shreds them. A part with `"mode": "orthogonal_stamp"` instead swaps in authored **variants**
+   (open, wide, round, blink, squint) at an integer anchor that follows its parent bone, the way Spine
+   slot attachments work. Speech uses the six-viseme recipe in
+   [pixelanim/methods/speech_viseme_6f.md](pixelanim/methods/speech_viseme_6f.md). The rotation gate
+   reports 0% feature damage on the trainer bust.
+6. **Look.** `sheet.py` renders numbered grids, contact sheets and GIFs. It also prints **text maps**
    of part labels and palette indices, because a render shows *where* a texel is but not *which colour
    family* it belongs to.
 
@@ -100,6 +114,25 @@ python examples/make_media.py                         # regenerate every GIF in 
 
 To animate your own sprite, follow [docs/GETTING_STARTED.md](docs/GETTING_STARTED.md).
 
+### Making the sprite first (optional)
+
+`pixelanim/studio.py` bridges the [Graydient](https://graydient.ai) CLI to the rest of the pipeline. It needs
+the `graydient` command on your PATH and an account, and nothing else in the repo depends on it. A sprite
+goes through three stages: `krea2` draws the base art, `edit-qwen21-turbo` swaps the white background for
+real alpha, and `pixelize.py` snaps it to an exact texel grid and a closed palette, locally and
+deterministically.
+
+```bash
+python pixelanim/studio.py generate "a scruffy alley brawler in a ragged leather jacket"     --out out/brawler/front.png --height 48 --colours 16
+python pixelanim/studio.py isolate  concept.png --subject "sidewalk tiles" --out out/tile.png  # existing art
+python pixelanim/studio.py turnaround out/brawler/front.png --out-dir out/brawler/views --subject brawler
+python pixelanim/studio.py scaffold biped brawler out/brawler/front.png --out out/brawler/rig.json
+```
+
+Keep the edit prompt short and free of the words "RGBA" or "transparent background": longer prompts made
+the model draw a literal checkerboard into the pixels. The skill file for agents that drive this is
+[skills/pixelanim/SKILL.md](skills/pixelanim/SKILL.md) (mirrored in `.agents/skills/`).
+
 ## Driving it with an agent
 
 Hand your agent this repository and [AGENTS.md](AGENTS.md). (Claude Code picks it up automatically
@@ -119,10 +152,11 @@ only a look can tell you which one reads as breathing and not a gesture.
 
 | | |
 |---|---|
-| **Solid** | Segmentation with seed validation, derived underlap, mirror rebuild, FK render, ground lock, squash/stretch, chain lag, part variants, colour flash, 15 gates, text/grid/contact/GIF views, retargeting a 2D keypoint clip into a state. The front-facing rigs pass 15/15. |
+| **Solid** | Segmentation with seed validation, derived underlap, mirror rebuild, FK render, ground lock, squash/stretch, chain lag, part variants, orthogonal slot stamping for faces, six-viseme speech, colour flash, 15 gates, text/grid/contact/GIF views, retargeting a 2D keypoint clip into a state. The skeleton, hobo and trainer rigs pass 15/15 (the Aseprite `agree` gate skips without a strip). |
+| **In progress** | `examples/hobos/` (Barnaby, Carl, Dan, Slick): four generated characters with blink and speech parts. 14/15 each. The `holes` gate fails on one frame per character (21 to 22 torn texels on the `ready` pose for three of them, 1 texel on Slick's idle). The cut needs seeds or underlap reworked, not new art. |
 | **Experimental** | Eight facings (`yaw`). Side and back art for each part comes from generated turnaround views, corrected onto the sprite's grid and palette (`pixelize.py`). The full skeleton set is 264 frames and passes 14/15 gates. |
 | **Known defects** | At some facings, thin one-texel cracks open at the shoulder seam when an arm swings (the `holes` gate fails on those frames). The rear views read as a dark mass. There is no jaw or face variant yet, so no talk state. The eight-facing code has no Aseprite (Lua) mirror, so `agree` is skipped there. See [docs/DEFECTS.md](docs/DEFECTS.md). |
-| **Not yet** | Seed proposal that generalises past bipeds, transitions and interruption rules between states. |
+| **Not yet** | Mouth and eye variants are still hand-authored or generated per character, with no automatic proposal. Seed proposal that generalises past bipeds, transitions and interruption rules between states. |
 
 ## Layout
 
@@ -135,8 +169,12 @@ only a look can tell you which one reads as breathing and not a gesture.
 | `pixelanim/rig.lua` | the same maths inside Aseprite, for hand touch-ups (optional) |
 | `pixelanim/retarget.py`, `bvh.py` | fit a keypoint or mocap clip to a rig state |
 | `pixelanim/rotscan.py` | list the rotation angles a small part survives cleanly |
+| `pixelanim/studio.py` | Graydient bridge: generate, isolate transparency, turnaround, scaffold a rig |
+| `pixelanim/methods/` | executable recipes, currently the six-viseme speech method |
 | `pixelanim/pixelize.py`, `facing.py`, `mirrorpatch.py`, `walkcheck.py` | turning generated view art into on-grid, on-palette sprites |
 | `examples/skeleton_warrior/` | the biped: front rig, two-bone legs, eight-facing views and the full set |
+| `examples/hobo/`, `examples/trainer/` | face work: jaw and eye variants, speech, and an 83-texel 16-colour battle bust with audio |
+| `examples/hobos/` | four more generated characters (in progress, see Status) |
 | `examples/slime/`, `examples/wisp/` | squash/stretch and chain lag (`make_examples.py` regenerates them) |
 | `examples/make_media.py` | renders every picture in this README |
 
@@ -151,6 +189,7 @@ only a look can tell you which one reads as breathing and not a gesture.
 | [docs/DEFECTS.md](docs/DEFECTS.md) | open defects, the backlog, and how each defect class was found |
 | [docs/SPIKE_YAW.md](docs/SPIKE_YAW.md) | the eight-facing work: what was tried, with numbers |
 | [docs/EXPERIMENT_CMU.md](docs/EXPERIMENT_CMU.md), [docs/EXPERIMENT_DIFFUSION.md](docs/EXPERIMENT_DIFFUSION.md) | real mocap retargeting; diffusion turnarounds plus deterministic pixel correction |
+| [docs/SPIKE_FACIAL_AND_COMPOSITION.md](docs/SPIKE_FACIAL_AND_COMPOSITION.md) | why passing gates did not make a face readable, and the slot-stamping design that fixed it |
 | [docs/HANDOFF.md](docs/HANDOFF.md) | the original argument and engineering history |
 
 ## Origin
