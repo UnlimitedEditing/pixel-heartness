@@ -1,16 +1,17 @@
 ---
 name: pixelanim
-description: On-call pixel art studio for generating, editing, rigging, and animating pixel-perfect game sprites. Bridges Graydient CLI (qwen21 / edit-qwen21 with native RGBA transparency) with pixelanim's deterministic quantization, ambient rigging (squash/stretch, chain lag), orthogonal slot stamping (Spine/Saint11 standard), and 15 mathematical zero-defect quality gates.
+description: On-call pixel art studio for generating, editing, rigging, and animating pixel-perfect game sprites. Bridges Graydient CLI (krea2 for base pixel accuracy, edit-qwen / edit-qwen21 for native RGBA transparency) with pixelanim's deterministic quantization, ambient rigging (squash/stretch, chain lag), orthogonal slot stamping (Spine/Saint11 standard), and 15 mathematical zero-defect quality gates.
 ---
 
 # PixelAnim Studio & Graydient Pixel Engine
 
 Use this skill whenever asked to:
-- Generate new pixel art characters, props, or monsters from scratch.
+- Generate new pixel art characters, tiles, props, or monsters from scratch.
+- Clean and isolate transparency on existing concept art or tile sheets (`krea2` -> `edit-qwen` -> `pixelanim`).
 - Create 8-facing turnaround sheets from a front-facing sprite.
 - Rig and animate 2D pixel sprites (idles, breathing, squash/stretch jumps, floating wisps, walks).
 - Animate expressive facial features, lip-sync speech, and blinks using the Saint11 6-viseme standard and orthogonal slot stamping.
-- Author high-resolution battle busts (e.g. PokÃ©mon DS / Fire Emblem GBA style) with protected hair bangs and precise facial anatomy.
+- Author high-resolution battle busts (e.g. Pokémon DS / Fire Emblem GBA style) with protected hair bangs and precise facial anatomy.
 - Perform pixel-perfect edits, part variations (blinks, weapon swaps, open jaws), or action keyframes.
 - Ensure strict palette closure, integer texel alignment, and zero-defect quality gates (15/15 gates).
 
@@ -18,14 +19,17 @@ Use this skill whenever asked to:
 
 ## 1. The Core Contract
 
-1. **The Generative Model Proposes; The Harness Disposes.**
-   - Generative models (`qwen21` / `edit-qwen21`) supply reference art, turnarounds, and candidate poses.
-   - `pixelanim` makes **every single on-grid texel** deterministically. No rogue diffusion noise or off-palette pixels ever reach production.
-2. **Native RGBA Transparency (Zero-Halo Standard):**
-   - Never generate sprites against white or colored backgrounds. Never use post-hoc background removers (like Banana/rembg/SAM) on pixel art.
-   - Always invoke Graydient with the RGBA transparency prompt contract:
-     > `"This is an RGBA format image with transparency. <prompt>. The image has an alpha channel and a transparent background."`
-   - `pixelize.py` automatically detects native RGBA alpha channels (`alpha < 128`), preserving 1-pixel outlines and highlights razor-sharp without near-white flood-fill erosion.
+1. **The 3-Stage Generative Pipeline (`krea2` -> `edit-qwen` -> `pixelanim`):**
+   - **Stage 1 (Base Art with `krea2`):** Always use `krea2` for base pixel art generation. Diffusion models like `qwen21` have loose, blurry pixel boundaries. `krea2` possesses vastly superior priors for authentic retro pixel-art silhouettes, consistent texel grids, and sharp contours.
+   - **Stage 2 (Transparency Cleanup with `edit-qwen`):** Base `krea2` outputs sit on solid backgrounds. We pass the candidate image into `edit-qwen` (or `edit-qwen21`) with the native RGBA transparency prompt contract to produce true alpha channels without fuzzy edge eating.
+   - **Stage 3 (Deterministic Local Correction with `pixelanim`):** `pixelanim` (`pixelize.py`) performs all quantization, texel grid snapping, palette closure, and outline preservation deterministically on the local machine. No diffusion noise or off-palette texels ever reach production.
+2. **Transparency: short prompt, `edit-qwen21-turbo` (verified 2026-10-01):**
+   - Never describe the subject or talk about "RGBA / alpha channel / transparent background" in the edit prompt. Long prompts make qwen draw a literal checkerboard "transparency grid" into the pixels (it happened on every sprite).
+   - Use exactly this, with the base render (solid white background) as `--init-image`:
+     > `remove white background from subject and replace with alpha transparent layer. correct non square subtexel pixels /run:edit-qwen21-turbo`
+   - It returns a real RGBA image and also straightens non-square texels. Leave `/steps` unset for the turbo workflow.
+   - Never use post-hoc colour thresholding, rembg, or SAM. `Tools/cleanbg.py` in BumFightManager is only a fallback for old checkerboard renders.
+   - `pixelize.py` detects the native alpha (`alpha < 128`), preserving 1-pixel outlines.
 3. **The Orthogonal Slot Invariant (Spine / Saint11 Standard):**
    - **Never apply 2D continuous affine rotation to sub-16px facial features** (eyes, mouth, nose, jaw).
    - Inverse nearest-neighbor sampling on low-resolution facial clusters destroys cluster morphology, causes phase cancellation, and ruins the T-zone.
@@ -52,54 +56,75 @@ Use this skill whenever asked to:
   - Speech Visemes: `D:\pixelanim\pixelanim\methods\speech_viseme_6f.md`
 - **Reference Examples:**
   - Hobo Brawler (48x48): `D:\pixelanim\examples\hobo/`
-  - PokÃ©mon Trainer Battle Bust (64x92): `D:\pixelanim\examples\trainer/`
+  - Pokémon Trainer Battle Bust (64x92): `D:\pixelanim\examples\trainer/`
 - **Graydient CLI:** `graydient` (available globally in PATH)
 
 ---
 
 ## 3. Workflow Runbooks
 
-### Workflow A: Generate New Character Sprite (`qwen21`)
+### Workflow A: Generate New Character Sprite or Tile (`krea2` -> `edit-qwen` -> `pixelanim`)
 
-Use this workflow to create a brand-new, on-grid pixel sprite with crisp alpha.
+Use this workflow to create a brand-new, on-grid pixel sprite or tile with crisp native alpha.
 
-#### Step 1: Run Generation & Auto-Cleaning
+#### Step 1: Run Full 3-Stage Generation
 ```bash
 python D:\pixelanim\pixelanim\studio.py generate \
-  "16-bit pixel art of a necromancer in dark purple robes holding a glowing skull staff" \
-  --out ./out/necromancer/front.png \
+  "a scruffy alley brawler in ragged leather jacket with taped fists" \
+  --out ./out/brawler/front.png \
   --height 48 \
   --colours 16 \
-  --preserve 0.5 \
-  --steps 30
+  --base-workflow krea2 \
+  --edit-workflow edit-qwen21-turbo \
+  --preserve 0.5
 ```
+This automatically executes:
+1. `krea2` diffusion generating pixel-accurate base concept art.
+2. `edit-qwen` image-to-image isolating the subject with a true native RGBA transparent alpha channel.
+3. `pixelize.py` locally quantizing onto an exact 48-texel integer grid with a 16-color closed palette.
 
 #### Step 2: Inspect Palette & Texture Map
 Verify the palette indices and texel structure:
 ```bash
-python D:\pixelanim\pixelanim\sheet.py map ./out/necromancer/front.png --what colours
+python D:\pixelanim\pixelanim\sheet.py map ./out/brawler/front.png --what colours
 ```
 
 ---
 
-### Workflow B: Generate 8-Facing Turnaround Set (`edit-qwen21`)
+### Workflow A.2: Isolate Transparency on Existing Art / Tiles (`isolate`)
+
+If you already have a concept art sheet, tile, or prop generated via `krea2` or another tool:
+```bash
+python D:\pixelanim\pixelanim\studio.py isolate \
+  ./path/to/krea2_asset.png \
+  --subject "cracked concrete sidewalk tiles" \
+  --out ./out/tiles/sidewalk.png \
+  --height 32 \
+  --colours 16 \
+  --edit-workflow edit-qwen
+```
+
+---
+
+### Workflow B: Generate 8-Facing Turnaround Set (`edit-qwen`)
 
 Use this when you have a front-facing sprite and need profile, 3/4, and rear views for game engines.
 
 #### Step 1: Synthesize Turnaround Ring
 ```bash
 python D:\pixelanim\pixelanim\studio.py turnaround \
-  ./out/necromancer/front.png \
-  --out-dir ./out/necromancer/views/ \
-  --subject "necromancer" \
+  ./out/brawler/front.png \
+  --out-dir ./out/brawler/views/ \
+  --subject "brawler in ragged jacket" \
   --height 48 \
+  --workflow edit-qwen \
   --steps 35
 ```
 This automatically:
 1. Upscales the front sprite 10x with nearest-neighbor interpolation.
-2. Prompts `edit-qwen21` for $45^\circ$ (q34), $90^\circ$ (qside), $135^\circ$ (qrear34), and $180^\circ$ (qrear) with native RGBA transparency.
+2. Prompts `edit-qwen` for $45^\circ$ (q34), $90^\circ$ (qside), $135^\circ$ (qrear34), and $180^\circ$ (qrear) with native RGBA transparency.
 3. Quantizes each raw view with `pixelize.py` against the front sprite's scale and exact palette.
-4. Generates bilateral opposite views ($225^\circ, 270^\circ, 315^\circ$) via `mirrorpatch.py`, protecting handed items (staves, shields, weapons).
+4. Generates bilateral opposite views ($225^\circ, 270^\circ, 315^\circ$) via `mirrorpatch.py`, protecting handed items (weapons, bags, wraps).
 
 ---
 
@@ -196,7 +221,7 @@ In `rig.json`:
 
 ### Workflow E: High-Resolution Battle Busts & Facial Slicing
 
-For high-resolution characters ($64 \times 64$ to $96 \times 96$ battle busts, e.g. PokÃ©mon DS or Fire Emblem GBA style):
+For high-resolution characters ($64 \times 64$ to $96 \times 96$ battle busts, e.g. Pokémon DS or Fire Emblem GBA style):
 
 1. **Protect Hair Bangs (Eye Sockets Masking):**
    - Never use broad bounding boxes for eyes that include hair bangs or bridge skin.
@@ -210,14 +235,14 @@ For high-resolution characters ($64 \times 64$ to $96 \times 96$ battle busts, e
 
 ---
 
-### Workflow F: Complex Action Keyframes (`edit-qwen21` + Cleanup)
+### Workflow F: Complex Action Keyframes (`edit-qwen` + Cleanup)
 
 For extreme actions (e.g. leap strikes, spell casting, death collapses) where 2D cutout rotation alone cannot foreshorten limbs:
 
 1. **Synthesize Action Pose:**
-   Prompt `edit-qwen21` with 10x front sprite as `--init-image`:
+   Prompt `edit-qwen` with 10x front sprite as `--init-image`:
    ```bash
-   graydient render "This is an RGBA format image with transparency. Redraw the character raising weapon high with two hands. Keep the same pixel art style, exact colours and proportions. The image has an alpha channel and a transparent background. /run:edit-qwen21 /steps:35 /seed:4012" --init-image ./raw/front_x10.png --out ./raw/action_raw.png
+   graydient render "Redraw the character raising weapon high with two hands. Keep the same pixel art style, exact colours and proportions. Replace the white background with an alpha transparent layer. /run:edit-qwen21-turbo /seed:4012" --init-image ./raw/front_x10.png --out ./raw/action_raw.png
    ```
 2. **Clean onto Source Grid:**
    ```bash
