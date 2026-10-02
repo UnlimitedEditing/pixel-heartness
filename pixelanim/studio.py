@@ -1,11 +1,12 @@
 """PixelAnim Studio: Bridge between Graydient CLI and pixelanim.
 
 Orchestrates:
-1. Native RGBA image generation using Graydient qwen21
-2. View turnaround & state synthesis using Graydient edit-qwen21
+1. Base pixel art generation via Graydient krea2 (high pixel accuracy & crisp silhouette)
+2. Native RGBA transparency cleanup via Graydient edit-qwen / edit-qwen21
 3. Deterministic quantization, grid fitting, and palette cleanup via pixelize.py
-4. Symmetry & handedness preservation via mirrorpatch.py
-5. Scaffolding archetype rigs (biped, slime, wisp) for the animation loop
+4. View turnaround & state synthesis using Graydient edit-qwen / edit-qwen21
+5. Symmetry & handedness preservation via mirrorpatch.py
+6. Scaffolding archetype rigs (biped, slime, wisp) for the animation loop
 """
 from __future__ import annotations
 
@@ -28,9 +29,20 @@ if str(HERE) not in sys.path:
 import pixelize
 import mirrorpatch
 
-RGBA_PROMPT_TEMPLATE = (
-    "This is an RGBA format image with transparency. {prompt}. "
-    "The image has an alpha channel and a transparent background."
+# Keep the isolation prompt SHORT and subject-free. Long prompts that describe the subject and talk about
+# "RGBA / alpha channel / transparent background" make qwen draw a literal checkerboard "transparency grid"
+# (observed on every sprite, 2026-10-01). This wording on edit-qwen21-turbo returns clean alpha and also
+# straightens non-square texels.
+ISOLATE_PROMPT = (
+    "remove white background from subject and replace with alpha transparent layer. "
+    "correct non square subtexel pixels"
+)
+DEFAULT_EDIT_WORKFLOW = "edit-qwen21-turbo"
+
+KREA2_STYLE_TEMPLATE = (
+    "16-bit retro pixel art, SNES RPG style, crisp pixel-perfect rendering, clean black outlines, "
+    "vibrant color palette, flat lighting, front view, eye level, 2D sprite, isolated on solid white background, "
+    "featuring {prompt}"
 )
 
 
@@ -38,11 +50,11 @@ def run_graydient(
     prompt: str,
     workflow: str,
     out_path: Path,
-    init_image: Path | None = None,
+    init_image: Path | str | None = None,
     steps: int = 30,
     seed: int | None = None,
-    timeout_mins: int = 8,
-) -> Path:
+    timeout_mins: int = 15,
+) -> tuple[Path, str | None]:
     """Invokes graydient render and returns the downloaded file path."""
     out_path = Path(out_path).resolve()
     out_path.parent.mkdir(parents=True, exist_ok=True)
@@ -61,7 +73,11 @@ def run_graydient(
     cmd.append(full_prompt)
 
     if init_image:
-        cmd.extend(["--init-image", str(Path(init_image).resolve())])
+        init_str = str(init_image)
+        if init_str.startswith("http://") or init_str.startswith("https://"):
+            cmd.extend(["--init-image", init_str])
+        else:
+            cmd.extend(["--init-image", str(Path(init_image).resolve())])
 
     cmd.extend(["--out", str(out_path)])
     cmd.extend(["--timeout", str(timeout_mins)])
@@ -76,61 +92,87 @@ def run_graydient(
 
     print(f"[studio] Graydient output:\n{result.stdout.strip()}")
 
+    # Extract remote URL from stdout if available
+    remote_url = None
+    for line in result.stdout.splitlines():
+        line = line.strip()
+        if line.startswith("http://") or line.startswith("https://"):
+            remote_url = line
+            break
+
     # Find the resulting file
+    final_path = None
     if out_path.is_file():
-        return out_path
+        final_path = out_path
     elif out_path.is_dir():
-        # Look for the newest image in out_path
         candidates = list(out_path.glob("*.png")) + list(out_path.glob("*.webp"))
         if not candidates:
             raise FileNotFoundError(f"No image found in {out_path} after render.")
         candidates.sort(key=lambda p: p.stat().st_mtime, reverse=True)
-        return candidates[0]
+        final_path = candidates[0]
     else:
-        # If it was saved with an auto-extension
         for ext in [".png", ".webp", ".jpg"]:
             cand = out_path.with_suffix(ext)
             if cand.exists():
-                return cand
+                final_path = cand
+                break
+
+    if not final_path:
         raise FileNotFoundError(f"Render output target {out_path} not found.")
 
+    return final_path, remote_url
 
-def generate_sprite(
-    prompt: str,
-    out: Path,
-    height: int = 48,
-    colours: int = 16,
-    steps: int = 30,
+
+def isolate_transparency(
+    init_image: Path | str,
+    subject: str,
+    out_path: Path,
+    edit_workflow: str = DEFAULT_EDIT_WORKFLOW,
+    steps: int = 0,
     seed: int | None = None,
-    preserve: float = 0.5,
-    raw_dir: Path | None = None,
-) -> Path:
-    """Generates a new sprite from text with native RGBA transparency, then cleans it."""
-    out = Path(out).resolve()
-    out.parent.mkdir(parents=True, exist_ok=True)
-    raw_dir = raw_dir or (out.parent / "raw")
-    raw_dir.mkdir(parents=True, exist_ok=True)
+) -> tuple[Path, str | None]:
+    """Takes a source concept/sprite image or URL and uses edit-qwen to produce an image with native RGBA transparency.
 
-    raw_file = raw_dir / f"{out.stem}_raw.png"
-    rgba_prompt = RGBA_PROMPT_TEMPLATE.format(prompt=prompt)
+    `subject` is accepted for compatibility but deliberately NOT put in the prompt (see ISOLATE_PROMPT).
+    `steps=0` leaves the workflow's own step count alone (the turbo workflow is tuned for it)."""
+    if not (str(init_image).startswith("http://") or str(init_image).startswith("https://")):
+        init_image = Path(init_image).resolve()
+    out_path = Path(out_path).resolve()
+    out_path.parent.mkdir(parents=True, exist_ok=True)
 
-    print(f"\n=== Step 1: Generating Raw Sprite via Graydient qwen21 ===")
-    rendered_img_path = run_graydient(
+    rgba_prompt = ISOLATE_PROMPT
+
+    print(f"\n=== Transparency Isolation via Graydient {edit_workflow} ===")
+    print(f"[studio] Source Image: {init_image}")
+    return run_graydient(
         prompt=rgba_prompt,
-        workflow="qwen21",
-        out_path=raw_file,
+        workflow=edit_workflow,
+        init_image=init_image,
+        out_path=out_path,
         steps=steps,
         seed=seed,
     )
 
-    print(f"\n=== Step 2: Deterministic Quantization & Grid Fitting ===")
-    img = Image.open(rendered_img_path)
+
+def pixelize_image(
+    source_img_path: Path,
+    out_path: Path,
+    height: int = 48,
+    colours: int = 16,
+    preserve: float = 0.5,
+) -> Path:
+    """Locally and deterministically cleans up an RGBA image onto an exact texel grid and closed palette."""
+    out_path = Path(out_path).resolve()
+    out_path.parent.mkdir(parents=True, exist_ok=True)
+
+    print(f"\n=== Deterministic Local Quantization & Grid Fitting (pixelanim) ===")
+    img = Image.open(source_img_path)
     bg = pixelize.background_mask(img)
     pal = pixelize.derive_palette(img, bg, colours=colours)
     
     x0, y0, x1, y1 = pixelize.figure_box(bg)
     t = (y1 - y0) / float(height)
-    print(f"[studio] Discovered {len(pal)} palette colors. Scale: {t:.2f} px per texel (height: {height})")
+    print(f"[studio] Discovered {len(pal)} palette colors. Scale: {t:.2f} px per texel (target height: {height} texels)")
 
     clean_sprite = pixelize.pixelize(
         img,
@@ -141,9 +183,72 @@ def generate_sprite(
         preserve=preserve,
     )
 
-    clean_sprite.save(out)
-    print(f"[studio] Wrote crisp, on-grid pixel sprite: {out} ({clean_sprite.width}x{clean_sprite.height})")
-    return out
+    clean_sprite.save(out_path)
+    print(f"[studio] Wrote crisp, on-grid pixel sprite: {out_path} ({clean_sprite.width}x{clean_sprite.height})")
+    return out_path
+
+
+def generate_sprite(
+    prompt: str,
+    out: Path,
+    height: int = 48,
+    colours: int = 16,
+    base_workflow: str = "krea2",
+    edit_workflow: str = DEFAULT_EDIT_WORKFLOW,
+    steps_base: int = 30,
+    steps_edit: int = 0,
+    seed: int | None = None,
+    preserve: float = 0.5,
+    raw_dir: Path | None = None,
+    skip_transparency: bool = False,
+) -> Path:
+    """Generates a new sprite using the 3-stage pipeline:
+    1. Base Art: krea2 (pixel-accurate style, crisp outlines)
+    2. Transparency: edit-qwen (native RGBA isolation)
+    3. Cleanup: pixelanim pixelize.py (deterministic quantization & palette closure)
+    """
+    out = Path(out).resolve()
+    out.parent.mkdir(parents=True, exist_ok=True)
+    raw_dir = raw_dir or (out.parent / "raw")
+    raw_dir.mkdir(parents=True, exist_ok=True)
+
+    # 1. Base Art with krea2
+    krea_file = raw_dir / f"{out.stem}_krea2.png"
+    print(f"\n=== Step 1: Generating Base Pixel Art via Graydient {base_workflow} ===")
+    krea_prompt = KREA2_STYLE_TEMPLATE.format(prompt=prompt)
+    rendered_krea_path, krea_remote_url = run_graydient(
+        prompt=krea_prompt,
+        workflow=base_workflow,
+        out_path=krea_file,
+        steps=steps_base,
+        seed=seed,
+    )
+
+    # 2. Transparency Cleanup with edit-qwen (prefer direct S3 URL to avoid upload relay)
+    if skip_transparency:
+        transparent_img_path = rendered_krea_path
+    else:
+        init_target = krea_remote_url if krea_remote_url else rendered_krea_path
+        trans_file = raw_dir / f"{out.stem}_trans.png"
+        print(f"\n=== Step 2: Transparency Isolation via Graydient {edit_workflow} ===")
+        transparent_img_path, trans_remote_url = isolate_transparency(
+            init_image=init_target,
+            subject=prompt,
+            out_path=trans_file,
+            edit_workflow=edit_workflow,
+            steps=steps_edit,
+            seed=seed,
+        )
+
+    # 3. Deterministic Local Quantization
+    print(f"\n=== Step 3: Local Pixel Correction via pixelanim ===")
+    return pixelize_image(
+        source_img_path=transparent_img_path,
+        out_path=out,
+        height=height,
+        colours=colours,
+        preserve=preserve,
+    )
 
 
 def prepare_input_x10(src_path: Path, out_path: Path) -> Path:
@@ -161,6 +266,7 @@ def generate_turnaround(
     out_dir: Path,
     subject_desc: str,
     height: int | None = None,
+    workflow: str = "edit-qwen",
     steps: int = 35,
     base_seed: int = 1100,
     preserve: float = 0.5,
@@ -197,12 +303,12 @@ def generate_turnaround(
             f"Rotate the {subject_desc} to a {desc}. "
             f"Keep the same pixel art style, exact colours and proportions."
         )
-        rgba_prompt = RGBA_PROMPT_TEMPLATE.format(prompt=prompt)
+        rgba_prompt = prompt + " Replace the white background with an alpha transparent layer."
         
-        print(f"\n--- Rendering {name} ({angle}°) ---")
+        print(f"\n--- Rendering {name} ({angle}Â°) ---")
         run_graydient(
             prompt=rgba_prompt,
-            workflow="edit-qwen21",
+            workflow=workflow,
             init_image=in_x10,
             out_path=view_raw,
             steps=steps,
@@ -267,7 +373,6 @@ def scaffold_rig(
     out_rig.parent.mkdir(parents=True, exist_ok=True)
     source_sprite = Path(source_sprite).resolve()
 
-    # Relative source path from rig directory
     try:
         rel_source = os.path.relpath(source_sprite, out_rig.parent)
     except ValueError:
@@ -420,22 +525,47 @@ def main():
     ap = argparse.ArgumentParser(description="PixelAnim Studio Graydient Bridge")
     sub = ap.add_subparsers(dest="command", required=True)
 
-    # generate
-    gen_p = sub.add_parser("generate", help="Text-to-sprite with native RGBA via qwen21")
+    # generate: 3-stage toolchain (krea2 -> edit-qwen -> pixelanim)
+    gen_p = sub.add_parser("generate", help="3-stage generation: krea2 base art -> edit-qwen transparency -> pixelanim local cleanup")
     gen_p.add_argument("prompt", help="Visual subject description")
     gen_p.add_argument("--out", type=Path, required=True, help="Destination clean sprite PNG")
     gen_p.add_argument("--height", type=int, default=48, help="Target sprite texel height")
     gen_p.add_argument("--colours", type=int, default=16, help="Target palette size")
-    gen_p.add_argument("--steps", type=int, default=30, help="Diffusion sampling steps")
+    gen_p.add_argument("--base-workflow", default="krea2", help="Base art workflow (default: krea2)")
+    gen_p.add_argument("--edit-workflow", default=DEFAULT_EDIT_WORKFLOW, help="Transparency cleanup workflow (default: edit-qwen)")
+    gen_p.add_argument("--steps-base", type=int, default=30, help="Base generation steps")
+    gen_p.add_argument("--steps-edit", type=int, default=0, help="Transparency edit steps")
     gen_p.add_argument("--seed", type=int, default=None, help="Generation seed")
     gen_p.add_argument("--preserve", type=float, default=0.5, help="Rarity boost for thin outlines/glints")
+    gen_p.add_argument("--skip-transparency", action="store_true", help="Skip edit-qwen transparency stage")
+
+    # isolate: take an existing image, isolate transparency via edit-qwen, and pixelize
+    iso_p = sub.add_parser("isolate", help="Clean existing image: edit-qwen transparency -> pixelanim cleanup")
+    iso_p.add_argument("image", type=Path, help="Source concept/raw sprite image")
+    iso_p.add_argument("--subject", required=True, help="Subject description for transparency isolation prompt")
+    iso_p.add_argument("--out", type=Path, required=True, help="Destination clean sprite PNG")
+    iso_p.add_argument("--height", type=int, default=48, help="Target sprite texel height")
+    iso_p.add_argument("--colours", type=int, default=16, help="Target palette size")
+    iso_p.add_argument("--edit-workflow", default=DEFAULT_EDIT_WORKFLOW, help="Transparency cleanup workflow (default: edit-qwen)")
+    iso_p.add_argument("--steps", type=int, default=25, help="Transparency edit steps")
+    iso_p.add_argument("--seed", type=int, default=None, help="Generation seed")
+    iso_p.add_argument("--preserve", type=float, default=0.5, help="Rarity boost for thin outlines/glints")
+
+    # pixelize: standalone local quantization of an already transparent or isolated image
+    pix_p = sub.add_parser("pixelize", help="Deterministic local quantization of an RGBA image")
+    pix_p.add_argument("image", type=Path, help="Source RGBA image")
+    pix_p.add_argument("--out", type=Path, required=True, help="Destination clean sprite PNG")
+    pix_p.add_argument("--height", type=int, default=48, help="Target sprite texel height")
+    pix_p.add_argument("--colours", type=int, default=16, help="Target palette size")
+    pix_p.add_argument("--preserve", type=float, default=0.5, help="Rarity boost for thin outlines/glints")
 
     # turnaround
-    turn_p = sub.add_parser("turnaround", help="8-facing turnaround via edit-qwen21")
+    turn_p = sub.add_parser("turnaround", help="8-facing turnaround via edit-qwen / edit-qwen21")
     turn_p.add_argument("front", type=Path, help="Source front-facing sprite PNG")
     turn_p.add_argument("--out-dir", type=Path, required=True, help="Directory to store turn views")
     turn_p.add_argument("--subject", type=str, required=True, help="Short subject description (e.g. 'skeleton warrior')")
     turn_p.add_argument("--height", type=int, default=None, help="Force height in texels")
+    turn_p.add_argument("--workflow", default="edit-qwen21", help="Turnaround edit workflow (default: edit-qwen)")
     turn_p.add_argument("--steps", type=int, default=35, help="Sampling steps")
     turn_p.add_argument("--seed", type=int, default=1100, help="Base seed")
     turn_p.add_argument("--preserve", type=float, default=0.5, help="Rarity boost")
@@ -456,8 +586,37 @@ def main():
             out=args.out,
             height=args.height,
             colours=args.colours,
+            base_workflow=args.base_workflow,
+            edit_workflow=args.edit_workflow,
+            steps_base=args.steps_base,
+            steps_edit=args.steps_edit,
+            seed=args.seed,
+            preserve=args.preserve,
+            skip_transparency=args.skip_transparency,
+        )
+    elif args.command == "isolate":
+        raw_trans = args.out.parent / "raw" / f"{args.out.stem}_trans.png"
+        trans_path = isolate_transparency(
+            init_image=args.image,
+            subject=args.subject,
+            out_path=raw_trans,
+            edit_workflow=args.edit_workflow,
             steps=args.steps,
             seed=args.seed,
+        )
+        pixelize_image(
+            source_img_path=trans_path,
+            out_path=args.out,
+            height=args.height,
+            colours=args.colours,
+            preserve=args.preserve,
+        )
+    elif args.command == "pixelize":
+        pixelize_image(
+            source_img_path=args.image,
+            out_path=args.out,
+            height=args.height,
+            colours=args.colours,
             preserve=args.preserve,
         )
     elif args.command == "turnaround":
@@ -466,6 +625,7 @@ def main():
             out_dir=args.out_dir,
             subject_desc=args.subject,
             height=args.height,
+            workflow=args.workflow,
             steps=args.steps,
             base_seed=args.seed,
             preserve=args.preserve,
